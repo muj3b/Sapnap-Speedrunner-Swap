@@ -1,0 +1,94 @@
+# SpeedrunnerSwap Configuration
+# Version 2.3.0
+
+# Teams Configuration
+teams:
+  runners: []  # List of runner player names
+  hunters: []  # List of hunter player names
+
+# Swap System Configuration
+swap:
+  # Fixed interval or random swap with Gaussian jitter
+  randomize: true
+  # Base interval in seconds (or mean if randomized)
+  interval: 60
+  # Min and max interval in seconds (only used if randomize is true)
+  min_interval: 30
+  max_interval: 90
+  # Jitter settings (only used if randomize is true)
+  jitter:
+    # Standard deviation in seconds
+    stddev: 15
+    # Whether to clamp within min/max limits
+    clamp: true
+  # Grace period after swaps (in ticks, 20 ticks = 1 second)
+  grace_period_ticks: 40
+  # Auto-pause if a runner disconnects
+  pause_on_disconnect: true
+
+# Safe Swap Configuration
+safe_swap:
+  # Whether to enable safe swap feature
+  enabled: true
+  # Horizontal scan radius (blocks)
+  horizontal_radius: 5
+  # Vertical scan distance (blocks)
+  vertical_distance: 10
+  # Dangerous blocks to avoid (material names)
+  dangerous_blocks:
+    - LAVA
+    - MAGMA_BLOCK
+    - CACTUS
+    - CAMPFIRE
+    - FIRE
+    - SOUL_FIRE
+    - SOUL_CAMPFIRE
+    - POINTED_DRIPSTONE
+
+# Freeze Mode for Inactive Runners
+# Options: EFFECTS, SPECTATOR
+freeze_mode: EFFECTS
+
+# Movement and Interaction Control
+cancel:
+  # Cancel movement for inactive runners
+  movement: true
+  # Cancel interactions for inactive runners
+  interactions: true
+
+# Hunter Tracker Configuration
+tracker:
+  # Whether to enable the compass tracker
+  enabled: true
+  # How often to update the compass (in ticks, 20 ticks = 1 second)
+  update_ticks: 10
+  # Whether to show coordinates in action bar for hunters
+  show_coordinates: true
+
+# GUI Configuration
+gui:
+  main_menu:
+    title: "SpeedrunnerSwap Menu"
+    rows: 3
+  team_selector:
+    title: "Team Selector"
+    rows: 4
+  settings:
+    title: "Settings"
+    rows: 5
+
+# Broadcast Configuration
+broadcasts:
+  # Whether to broadcast swap events to all players
+  enabled: true
+  # Whether to broadcast game start/stop events
+  game_events: true
+  # Whether to broadcast team changes
+  team_changes: true
+
+# Simple Voice Chat Integration (if available)
+voice_chat:
+  # Whether to integrate with Simple Voice Chat
+  enabled: true
+  # Whether to mute inactive runners
+  mute_inactive_runners: true
