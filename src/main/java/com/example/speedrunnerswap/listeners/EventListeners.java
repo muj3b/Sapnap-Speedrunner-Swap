@@ -1,7 +1,6 @@
 package com.example.speedrunnerswap.listeners;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
-import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -72,22 +71,7 @@ public class EventListeners implements Listener {
     
     // No plugin GUI in ControlSwap
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerChat(AsyncChatEvent event) {
-        Player player = event.getPlayer();
-        
-        // If the player is an inactive runner, cancel their chat messages
-        if (plugin.getGameManager().isGameRunning() && 
-            plugin.getGameManager().isRunner(player) && 
-            plugin.getGameManager().getActiveRunner() != player) {
-            
-            // Only send message to the player
-            player.sendMessage("§c[ControlSwap] You cannot chat while inactive.");
-            event.setCancelled(true);
-        }
-    }
-
-    // Legacy AsyncPlayerChatEvent handler removed (deprecated on modern Paper)
+    // Chat restriction removed for compatibility across server types
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {

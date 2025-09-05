@@ -77,13 +77,19 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
             return false;
         }
 
-        // Print quick help since GUI is removed in ControlSwap
-        sender.sendMessage("§6ControlSwap Commands:");
-        sender.sendMessage("§e/swap setrunners <names>§7 — set runners");
-        sender.sendMessage("§e/swap start|stop|pause|resume§7 — control game");
-        sender.sendMessage("§e/swap status§7 — show status");
-        sender.sendMessage("§e/swap reload§7 — reload config");
-        return true;
+        // Open main GUI
+        try {
+            new com.example.speedrunnerswap.gui.ControlGui(plugin).openMainMenu((Player) sender);
+            return true;
+        } catch (Throwable t) {
+            // Fallback: print help if GUI fails
+            sender.sendMessage("§6ControlSwap Commands:");
+            sender.sendMessage("§e/swap setrunners <names>§7 — set runners");
+            sender.sendMessage("§e/swap start|stop|pause|resume§7 — control game");
+            sender.sendMessage("§e/swap status§7 — show status");
+            sender.sendMessage("§e/swap reload§7 — reload config");
+            return true;
+        }
     }
     
     private boolean handleStart(CommandSender sender) {
@@ -96,7 +102,12 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§cThe game is already running.");
             return false;
         }
-        
+        // Convenience: if no runners configured, use all online players
+        if (plugin.getConfigManager().getRunnerNames().isEmpty() && !org.bukkit.Bukkit.getOnlinePlayers().isEmpty()) {
+            java.util.List<org.bukkit.entity.Player> all = new java.util.ArrayList<>(org.bukkit.Bukkit.getOnlinePlayers());
+            plugin.getGameManager().setRunners(all);
+        }
+
         boolean success = plugin.getGameManager().startGame();
         if (success) {
             sender.sendMessage("§aGame started successfully.");
@@ -238,13 +249,6 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
                 .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(donateUrl));
         player.sendMessage(header);
         player.sendMessage(donate);
-
-        // Open a small About GUI with a creator head in the top-right corner
-        try {
-            new com.example.speedrunnerswap.gui.AboutGui().openFor(player);
-        } catch (Throwable t) {
-            // ignore if GUI fails for any reason
-        }
         return true;
     }
     

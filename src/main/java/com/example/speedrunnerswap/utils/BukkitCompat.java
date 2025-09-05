@@ -145,4 +145,44 @@ public final class BukkitCompat {
         }
         return null;
     }
+
+    /**
+     * Hide a player from a viewer across Bukkit versions.
+     * Tries modern signature hidePlayer(Plugin, Player) then legacy hidePlayer(Player).
+     */
+    public static void hidePlayer(org.bukkit.plugin.Plugin plugin, Player viewer, Player target) {
+        if (viewer == null || target == null) return;
+        try {
+            java.lang.reflect.Method m = Player.class.getMethod("hidePlayer", org.bukkit.plugin.Plugin.class, Player.class);
+            m.invoke(viewer, plugin, target);
+            return;
+        } catch (NoSuchMethodException ignored) {
+        } catch (Throwable ignored) {
+        }
+        try {
+            java.lang.reflect.Method legacy = Player.class.getMethod("hidePlayer", Player.class);
+            legacy.invoke(viewer, target);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Show a previously hidden player to a viewer across Bukkit versions.
+     * Tries modern signature showPlayer(Plugin, Player) then legacy showPlayer(Player).
+     */
+    public static void showPlayer(org.bukkit.plugin.Plugin plugin, Player viewer, Player target) {
+        if (viewer == null || target == null) return;
+        try {
+            java.lang.reflect.Method m = Player.class.getMethod("showPlayer", org.bukkit.plugin.Plugin.class, Player.class);
+            m.invoke(viewer, plugin, target);
+            return;
+        } catch (NoSuchMethodException ignored) {
+        } catch (Throwable ignored) {
+        }
+        try {
+            java.lang.reflect.Method legacy = Player.class.getMethod("showPlayer", Player.class);
+            legacy.invoke(viewer, target);
+        } catch (Throwable ignored) {
+        }
+    }
 }

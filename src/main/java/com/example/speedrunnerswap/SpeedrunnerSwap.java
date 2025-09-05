@@ -4,7 +4,6 @@ import com.example.speedrunnerswap.commands.SwapCommand;
 import com.example.speedrunnerswap.config.ConfigManager;
 import com.example.speedrunnerswap.game.GameManager;
 import com.example.speedrunnerswap.listeners.DragonDefeatListener;
-import com.example.speedrunnerswap.gui.AboutGuiListener;
 import com.example.speedrunnerswap.listeners.EventListeners;
 // Runner-only plugin: trackers, kits, stats and other systems removed
 // Removed unused Bukkit import
@@ -36,11 +35,32 @@ public final class SpeedrunnerSwap extends JavaPlugin {
         // Register event listeners
         getServer().getPluginManager().registerEvents(new EventListeners(this), this);
         getServer().getPluginManager().registerEvents(new DragonDefeatListener(this), this);
-        // Minimal About GUI listener for /swap maker
-        getServer().getPluginManager().registerEvents(new AboutGuiListener(this), this);
+        // Register control GUI interactions
+        getServer().getPluginManager().registerEvents(new com.example.speedrunnerswap.gui.ControlGuiListener(this), this);
         
         // Log startup with version
-        String ver = getPluginMeta() != null ? getPluginMeta().getVersion() : "unknown";
+        // Prefer Paper's getPluginMeta() via reflection; fallback to deprecated getDescription() via reflection
+        String ver = "unknown";
+        try {
+            java.lang.reflect.Method m = this.getClass().getMethod("getPluginMeta");
+            Object meta = m.invoke(this);
+            if (meta != null) {
+                java.lang.reflect.Method gv = meta.getClass().getMethod("getVersion");
+                Object v = gv.invoke(meta);
+                if (v != null) ver = v.toString();
+            }
+        } catch (Throwable ignored) {
+            try {
+                java.lang.reflect.Method m2 = org.bukkit.plugin.java.JavaPlugin.class.getMethod("getDescription");
+                Object desc = m2.invoke(this);
+                if (desc != null) {
+                    java.lang.reflect.Method gv2 = desc.getClass().getMethod("getVersion");
+                    Object v2 = gv2.invoke(desc);
+                    if (v2 != null) ver = v2.toString();
+                }
+            } catch (Throwable ignored2) {
+            }
+        }
         getLogger().info("ControlSwap v" + ver + " enabled");
     }
     

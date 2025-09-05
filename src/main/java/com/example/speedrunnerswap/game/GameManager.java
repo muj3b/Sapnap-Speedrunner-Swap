@@ -509,7 +509,7 @@ public class GameManager {
                 try { runner.setFlying(false); } catch (Exception ignored) {}
                 
                 for (Player viewer : Bukkit.getOnlinePlayers()) {
-                    viewer.showPlayer(plugin, runner);
+                    com.example.speedrunnerswap.utils.BukkitCompat.showPlayer(plugin, viewer, runner);
                 }
             } else {
                 if (freezeMode.equalsIgnoreCase("EFFECTS")) {
@@ -548,7 +548,7 @@ public class GameManager {
                 
                 for (Player viewer : Bukkit.getOnlinePlayers()) {
                     if (!viewer.equals(runner)) {
-                        viewer.hidePlayer(plugin, runner);
+                        com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, runner);
                     }
                 }
             }
