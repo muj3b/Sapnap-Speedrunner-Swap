@@ -39,12 +39,13 @@ public final class BukkitCompat {
      * potentially-removed fields directly. Tries names in order.
      */
     public static Attribute resolveAttribute(String... names) {
+        // Avoid calling deprecated Attribute#valueOf(String) and steer clear of
+        // Enum.valueOf generics weirdness in some IDE setups by scanning values.
         for (String name : names) {
-            try {
-                // Avoid Attribute.valueOf deprecation by using Enum.valueOf
-                return java.lang.Enum.valueOf(Attribute.class, name);
-            } catch (IllegalArgumentException ignored) {
-                // try next
+            for (Attribute a : Attribute.values()) {
+                if (a.name().equals(name)) {
+                    return a;
+                }
             }
         }
         return null;
@@ -68,11 +69,30 @@ public final class BukkitCompat {
             default -> key;
         };
 
-        // Prefer modern namespaced-key resolver first (non-deprecated)
+        // Prefer modern registry/key resolver first without compile-time dependency
         try {
-            org.bukkit.NamespacedKey ns = org.bukkit.NamespacedKey.minecraft(key);
-            PotionEffectType byKey = PotionEffectType.getByKey(ns);
-            if (byKey != null) return byKey;
+            Class<?> nsk = Class.forName("org.bukkit.NamespacedKey");
+            java.lang.reflect.Method minecraft = nsk.getMethod("minecraft", String.class);
+            Object ns = minecraft.invoke(null, key);
+
+            // Try Registry.POTION_EFFECT_TYPE.get(key) if available (1.20+)
+            try {
+                Class<?> registryClass = Class.forName("org.bukkit.Registry");
+                Object reg = registryClass.getField("POTION_EFFECT_TYPE").get(null);
+                java.lang.reflect.Method get = reg.getClass().getMethod("get", nsk);
+                Object type = get.invoke(reg, ns);
+                if (type instanceof PotionEffectType) return (PotionEffectType) type;
+            } catch (Throwable ignored) {
+                // fall through to getByKey reflection next
+            }
+
+            // Fallback to deprecated getByKey via reflection to avoid compile-time warnings
+            try {
+                java.lang.reflect.Method getByKey = PotionEffectType.class.getMethod("getByKey", nsk);
+                Object type = getByKey.invoke(null, ns);
+                if (type instanceof PotionEffectType) return (PotionEffectType) type;
+            } catch (Throwable ignored) {
+            }
         } catch (Throwable ignored) {
             // continue to legacy fallback
         }
