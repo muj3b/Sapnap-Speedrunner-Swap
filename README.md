@@ -15,13 +15,9 @@
 
 ---
 
-## 📺 Inspired By
+## 📺 Watch the original!
 
-<div align="center">
-
-<a href="https://www.youtube.com/watch?v=GwrAvYlT7xg" target="_blank">Watch Sapnap’s Speedrunner Swap</a>
-
-</div>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/GwrAvYlT7xg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ---
 
