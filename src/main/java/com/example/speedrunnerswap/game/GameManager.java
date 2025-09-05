@@ -13,14 +13,11 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Location;
 import org.bukkit.*;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.Server;
-import com.example.speedrunnerswap.utils.BukkitCompat;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.GameMode;
 import java.time.Duration;
@@ -60,7 +57,9 @@ public class GameManager {
         }
         
         if (!canStartGame()) {
-            Bukkit.broadcast("§cGame cannot start: Add at least one runner.", Server.BROADCAST_CHANNEL_USERS);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§cGame cannot start: Add at least one runner.");
+            }
             return false;
         }
         
@@ -162,7 +161,9 @@ public class GameManager {
                 
                 if (plugin.getConfigManager().isBroadcastGameEvents()) {
                     String winnerMessage = (winner == Team.RUNNER) ? "Runners win!" : "Game ended!";
-                    Bukkit.broadcast("§a[ControlSwap] Game ended! " + winnerMessage, Server.BROADCAST_CHANNEL_USERS);
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.sendMessage("§a[ControlSwap] Game ended! " + winnerMessage);
+                    }
                 }
 
                 broadcastDonationMessage();
@@ -291,13 +292,14 @@ public class GameManager {
 
         // If all runners disconnect, pause instead of ending the game
         if (gameRunning && runners.isEmpty()) {
-            if (plugin.getConfigManager().isPauseOnDisconnect()) {
-                pauseGame();
-                if (plugin.getConfigManager().isBroadcastGameEvents()) {
-                    Bukkit.broadcast("§e[ControlSwap] Game paused: waiting for players to return.",
-                            Server.BROADCAST_CHANNEL_USERS);
-                }
-            } else {
+                if (plugin.getConfigManager().isPauseOnDisconnect()) {
+                    pauseGame();
+                    if (plugin.getConfigManager().isBroadcastGameEvents()) {
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            p.sendMessage("§e[ControlSwap] Game paused: waiting for players to return.");
+                        }
+                    }
+                } else {
                 // Keep running but log a warning for admins
                 plugin.getLogger().warning("No runners online; game continues (pause_on_disconnect=false)");
             }

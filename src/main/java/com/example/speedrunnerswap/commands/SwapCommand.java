@@ -241,7 +241,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
 
         // Open a small About GUI with a creator head in the top-right corner
         try {
-            new com.example.speedrunnerswap.gui.AboutGui(plugin).openFor(player);
+            new com.example.speedrunnerswap.gui.AboutGui().openFor(player);
         } catch (Throwable t) {
             // ignore if GUI fails for any reason
         }

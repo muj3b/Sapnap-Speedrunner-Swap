@@ -1,6 +1,4 @@
 package com.example.speedrunnerswap.gui;
-
-import com.example.speedrunnerswap.SpeedrunnerSwap;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -15,12 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AboutGui {
-    private final SpeedrunnerSwap plugin;
     private static final String TITLE = "ControlSwap — About";
 
-    public AboutGui(SpeedrunnerSwap plugin) {
-        this.plugin = plugin;
-    }
+    public AboutGui() {}
 
     public void openFor(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, Component.text(TITLE));
@@ -53,4 +48,3 @@ public class AboutGui {
         return TITLE;
     }
 }
-
