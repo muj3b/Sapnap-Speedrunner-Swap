@@ -41,7 +41,8 @@ public final class BukkitCompat {
     public static Attribute resolveAttribute(String... names) {
         for (String name : names) {
             try {
-                return Attribute.valueOf(name);
+                // Avoid Attribute.valueOf deprecation by using Enum.valueOf
+                return java.lang.Enum.valueOf(Attribute.class, name);
             } catch (IllegalArgumentException ignored) {
                 // try next
             }
@@ -67,18 +68,20 @@ public final class BukkitCompat {
             default -> key;
         };
 
-        // Use the classic resolver which exists across many versions
-        PotionEffectType byName = PotionEffectType.getByName(key.toUpperCase(java.util.Locale.ROOT));
-        if (byName != null) return byName;
-
-        // Try namespaced-key resolver if available at runtime
+        // Prefer modern namespaced-key resolver first (non-deprecated)
         try {
-            Class<?> nsk = Class.forName("org.bukkit.NamespacedKey");
-            java.lang.reflect.Method minecraft = nsk.getMethod("minecraft", String.class);
-            Object namespacedKey = minecraft.invoke(null, key);
-            java.lang.reflect.Method getByKey = PotionEffectType.class.getMethod("getByKey", nsk);
-            Object type = getByKey.invoke(null, namespacedKey);
-            if (type instanceof PotionEffectType) return (PotionEffectType) type;
+            org.bukkit.NamespacedKey ns = org.bukkit.NamespacedKey.minecraft(key);
+            PotionEffectType byKey = PotionEffectType.getByKey(ns);
+            if (byKey != null) return byKey;
+        } catch (Throwable ignored) {
+            // continue to legacy fallback
+        }
+
+        // Legacy fallback for older servers
+        try {
+            @SuppressWarnings("deprecation")
+            PotionEffectType byName = PotionEffectType.getByName(key.toUpperCase(java.util.Locale.ROOT));
+            if (byName != null) return byName;
         } catch (Throwable ignored) {
         }
 

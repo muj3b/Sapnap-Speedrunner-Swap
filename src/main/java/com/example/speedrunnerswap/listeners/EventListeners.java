@@ -2,7 +2,6 @@ package com.example.speedrunnerswap.listeners;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
 import io.papermc.paper.event.player.AsyncChatEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,8 +18,7 @@ import org.bukkit.inventory.ItemStack;
 public class EventListeners implements Listener {
     
     private final SpeedrunnerSwap plugin;
-    // Simple debounce for hot potato swap triggers
-    private volatile long lastHotPotatoTriggerMs = 0L;
+    // No hot-potato logic in ControlSwap
     
     public EventListeners(SpeedrunnerSwap plugin) {
         this.plugin = plugin;
@@ -89,16 +87,7 @@ public class EventListeners implements Listener {
         }
     }
 
-    // Fallback for servers where Paper's AsyncChatEvent may not fire
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerChatLegacy(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        if (!plugin.getGameManager().isGameRunning()) return;
-        if (!plugin.getGameManager().isRunner(player)) return;
-        if (plugin.getGameManager().getActiveRunner() == player) return;
-        player.sendMessage("§c[ControlSwap] You cannot chat while inactive.");
-        event.setCancelled(true);
-    }
+    // Legacy AsyncPlayerChatEvent handler removed (deprecated on modern Paper)
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {

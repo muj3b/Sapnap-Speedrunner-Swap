@@ -3,7 +3,6 @@ package com.example.speedrunnerswap.utils;
 import com.example.speedrunnerswap.models.PlayerState;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
-import com.example.speedrunnerswap.utils.BukkitCompat;
 
 import java.util.ArrayList;
 
@@ -67,7 +66,7 @@ public class PlayerStateUtil {
         player.teleport(state.getLocation());
         
         // Apply health and food (handle API changes across versions)
-        player.setHealth(Math.min(state.getHealth(), BukkitCompat.getMaxHealthValue(player)));
+        player.setHealth(Math.min(state.getHealth(), com.example.speedrunnerswap.utils.BukkitCompat.getMaxHealthValue(player)));
         player.setFoodLevel(state.getFoodLevel());
         player.setSaturation(state.getSaturation());
         player.setExhaustion(state.getExhaustion());
