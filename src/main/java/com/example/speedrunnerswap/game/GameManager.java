@@ -35,14 +35,10 @@ public class GameManager {
     private boolean gameRunning;
     private boolean gamePaused;
     private Player activeRunner;
-    private int activeRunnerIndex;
     private List<Player> runners;
-    private List<Player> hunters;
     private BukkitTask swapTask;
-    private BukkitTask hunterSwapTask;
     private BukkitTask actionBarTask;
     private BukkitTask titleTask;
-    private BukkitTask freezeCheckTask;
     private BukkitTask cageTask;
     private long nextSwapTime;
     private final Map<UUID, PlayerState> playerStates;
@@ -54,9 +50,7 @@ public class GameManager {
         this.plugin = plugin;
         this.gameRunning = false;
         this.gamePaused = false;
-        this.activeRunnerIndex = 0;
         this.runners = new ArrayList<>();
-        this.hunters = new ArrayList<>();
         this.playerStates = new HashMap<>();
     }
     
@@ -66,7 +60,7 @@ public class GameManager {
         }
         
         if (!canStartGame()) {
-            Bukkit.broadcast("§cGame cannot start: At least one runner and one hunter are required.", Server.BROADCAST_CHANNEL_USERS);
+            Bukkit.broadcast("§cGame cannot start: Add at least one runner.", Server.BROADCAST_CHANNEL_USERS);
             return false;
         }
         
@@ -91,42 +85,20 @@ public class GameManager {
                     this.cancel();
                     gameRunning = true;
                     gamePaused = false;
-                    activeRunnerIndex = 0;
-                    activeRunner = runners.get(activeRunnerIndex);                saveAllPlayerStates();
-                
-                if (plugin.getConfigManager().isKitsEnabled()) {
-                    for (Player player : runners) {
-                        plugin.getKitManager().giveKit(player, "runner");
+                    // Randomize starting runner if 3+ players; keep order for 2
+                    if (runners.size() >= 3) {
+                        int start = java.util.concurrent.ThreadLocalRandom.current().nextInt(runners.size());
+                        java.util.Collections.rotate(runners, -start);
                     }
-                    for (Player hunter : hunters) {
-                        plugin.getKitManager().giveKit(hunter, "hunter");
-                    }
-                }
-                
+                    activeRunner = runners.get(0);
+                    saveAllPlayerStates();
+
                 applyInactiveEffects();
                 scheduleNextSwap();
-                scheduleNextHunterSwap();
                 startActionBarUpdates();
                 startTitleUpdates();
                 startCageEnforcement();
                 
-                if (plugin.getConfigManager().isTrackerEnabled()) {
-                    plugin.getTrackerManager().startTracking();
-                    for (Player hunter : hunters) {
-                        if (hunter.isOnline()) {
-                            plugin.getTrackerManager().giveTrackingCompass(hunter);
-                        }
-                    }
-                }
-
-                // Optionally start stats tracking
-                if (plugin.getConfig().getBoolean("stats.enabled", true)) {
-                    plugin.getStatsManager().startTracking();
-                }
-
-                if (plugin.getConfigManager().isFreezeMechanicEnabled()) {
-                    startFreezeChecking();
-                }
             }
         }
     }.runTaskTimer(plugin, 0L, 20L);
@@ -139,29 +111,17 @@ public class GameManager {
 
         Component titleText;
         String runnerSubtitle = "";
-        String hunterSubtitle = "";
 
         if (winner == Team.RUNNER) {
             titleText = Component.text("RUNNERS WIN!", NamedTextColor.GREEN, TextDecoration.BOLD);
-            runnerSubtitle = "bro y'all are locked in, good stuff";
-            hunterSubtitle = "bro y'all are locked in, good stuff";
-        } else if (winner == Team.HUNTER) {
-            titleText = Component.text("HUNTERS WIN!", NamedTextColor.RED, TextDecoration.BOLD);
-            runnerSubtitle = "you ain't the main character unc";
-            hunterSubtitle = "bro those speedrunners are trash asf";
+            runnerSubtitle = "Great run!";
         } else {
             titleText = Component.text("GAME OVER", NamedTextColor.RED, TextDecoration.BOLD);
             runnerSubtitle = "No winner declared.";
-            hunterSubtitle = "No winner declared.";
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            Component subtitleText;
-            if (isRunner(player)) {
-                subtitleText = Component.text(runnerSubtitle, NamedTextColor.YELLOW);
-            } else {
-                subtitleText = Component.text(hunterSubtitle, NamedTextColor.YELLOW);
-            }
+            Component subtitleText = Component.text(runnerSubtitle, NamedTextColor.YELLOW);
 
             Title endTitle = Title.title(
                 titleText,
@@ -172,13 +132,9 @@ public class GameManager {
         }
 
         if (swapTask != null) swapTask.cancel();
-        if (hunterSwapTask != null) hunterSwapTask.cancel();
         if (actionBarTask != null) actionBarTask.cancel();
         if (titleTask != null) titleTask.cancel();
-        if (freezeCheckTask != null) freezeCheckTask.cancel();
         if (cageTask != null) { cageTask.cancel(); cageTask = null; }
-        plugin.getTrackerManager().stopTracking();
-        try { plugin.getStatsManager().stopTracking(); } catch (Exception ignored) {}
 
         new BukkitRunnable() {
             @Override
@@ -205,8 +161,8 @@ public class GameManager {
                 activeRunner = null;
                 
                 if (plugin.getConfigManager().isBroadcastGameEvents()) {
-                    String winnerMessage = (winner != null) ? winner.name() + " team won!" : "Game ended!";
-                    Bukkit.broadcast("§a[SpeedrunnerSwap] Game ended! " + winnerMessage, Server.BROADCAST_CHANNEL_USERS);
+                    String winnerMessage = (winner == Team.RUNNER) ? "Runners win!" : "Game ended!";
+                    Bukkit.broadcast("§a[ControlSwap] Game ended! " + winnerMessage, Server.BROADCAST_CHANNEL_USERS);
                 }
 
                 broadcastDonationMessage();
@@ -246,15 +202,6 @@ public class GameManager {
     }
 
     /**
-     * Get whether the player is a hunter
-     * @param player The player to check
-     * @return true if the player is a hunter
-     */
-    public boolean isHunter(Player player) {
-        return hunters.contains(player);
-    }
-
-    /**
      * Get whether the player is a runner
      * @param player The player to check
      * @return true if the player is a runner
@@ -287,13 +234,6 @@ public class GameManager {
         return runners;
     }
 
-    /**
-     * Get all hunters
-     * @return List of all hunters
-     */
-    public List<Player> getHunters() {
-        return hunters;
-    }
     
     /**
      * Refresh the swap schedule timer
@@ -332,7 +272,7 @@ public class GameManager {
             return false;
         }
         loadTeams();
-        return !runners.isEmpty() && !hunters.isEmpty();
+        return !runners.isEmpty();
     }
 
     /**
@@ -340,7 +280,6 @@ public class GameManager {
      */
     public void updateTeams() {
         List<Player> newRunners = new ArrayList<>();
-        List<Player> newHunters = new ArrayList<>();
 
         for (Player runner : runners) {
             if (runner.isOnline()) {
@@ -348,26 +287,19 @@ public class GameManager {
             }
         }
         
-        for (Player hunter : hunters) {
-            if (hunter.isOnline()) {
-                newHunters.add(hunter);
-            }
-        }
-
         runners = newRunners;
-        hunters = newHunters;
 
-        // If a team becomes empty due to disconnects, pause instead of ending the game
-        if (gameRunning && (runners.isEmpty() || hunters.isEmpty())) {
+        // If all runners disconnect, pause instead of ending the game
+        if (gameRunning && runners.isEmpty()) {
             if (plugin.getConfigManager().isPauseOnDisconnect()) {
                 pauseGame();
                 if (plugin.getConfigManager().isBroadcastGameEvents()) {
-                    Bukkit.broadcast("§e[SpeedrunnerSwap] Game paused: waiting for players to return.",
+                    Bukkit.broadcast("§e[ControlSwap] Game paused: waiting for players to return.",
                             Server.BROADCAST_CHANNEL_USERS);
                 }
             } else {
                 // Keep running but log a warning for admins
-                plugin.getLogger().warning("A team is empty; game continues (pause_on_disconnect=false)");
+                plugin.getLogger().warning("No runners online; game continues (pause_on_disconnect=false)");
             }
         }
     }
@@ -475,19 +407,10 @@ public class GameManager {
     
     private void loadTeams() {
         runners.clear();
-        hunters.clear();
-        
         for (String name : plugin.getConfigManager().getRunnerNames()) {
             Player player = Bukkit.getPlayerExact(name);
             if (player != null && player.isOnline()) {
                 runners.add(player);
-            }
-        }
-        
-        for (String name : plugin.getConfigManager().getHunterNames()) {
-            Player player = Bukkit.getPlayerExact(name);
-            if (player != null && player.isOnline()) {
-                hunters.add(player);
             }
         }
     }
@@ -519,18 +442,7 @@ public class GameManager {
         swapTask = Bukkit.getScheduler().runTaskLater(plugin, this::performSwap, intervalTicks);
     }
     
-    private void scheduleNextHunterSwap() {
-        if (hunterSwapTask != null) {
-            hunterSwapTask.cancel();
-        }
-
-        if (!plugin.getConfigManager().isHunterSwapEnabled()) {
-            return;
-        }
-
-        long intervalTicks = plugin.getConfigManager().getHunterSwapInterval() * 20L;
-        hunterSwapTask = Bukkit.getScheduler().runTaskLater(plugin, this::performHunterSwap, intervalTicks);
-    }
+    // Removed: hunter swap scheduling
     
     private void startActionBarUpdates() {
         if (actionBarTask != null) {
@@ -560,14 +472,19 @@ public class GameManager {
         }
 
         int timeLeft = getTimeUntilNextSwap();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            // Only the active runner sees the timer in the actionbar, and only for the last 10s.
-            if (player.equals(activeRunner) && timeLeft <= 10) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!runners.contains(p)) {
+                com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(p, "");
+                continue;
+            }
+            if (p.equals(activeRunner)) {
                 String msg = String.format("§eSwap in: §c%ds", Math.max(0, timeLeft));
-                com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(player, msg);
+                com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(p, msg);
             } else {
-                // Clear any prior actionbar for others
-                com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(player, "");
+                int idx = runners.indexOf(p);
+                int pos = Math.max(1, idx); // 1..n-1
+                String queued = (pos == 1) ? "§6Queued §7(§e1§7) — You’re up next" : "§7Queued §7(§f" + pos + "§7)";
+                com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(p, queued);
             }
         }
     }
@@ -636,52 +553,7 @@ public class GameManager {
         }
     }
     
-    private void startFreezeChecking() {
-        int interval = plugin.getConfigManager().getFreezeCheckIntervalTicks();
-        freezeCheckTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (!gameRunning || gamePaused || activeRunner == null) {
-                return;
-            }
-
-            int maxDistance = (int) plugin.getConfigManager().getFreezeMaxDistance();
-            Entity target = com.example.speedrunnerswap.utils.BukkitCompat.getTargetEntity(activeRunner, maxDistance);
-
-            if (target instanceof Player hunter && isHunter(hunter)) {
-                int duration = plugin.getConfigManager().getFreezeDurationTicks();
-                PotionEffectType slowness2 = BukkitCompat.resolvePotionEffect("slowness");
-                if (slowness2 != null)
-                    hunter.addPotionEffect(new PotionEffect(slowness2, duration, 255, false, false));
-                PotionEffectType jumpBoost = BukkitCompat.resolvePotionEffect("jump_boost");
-                if (jumpBoost != null)
-                    hunter.addPotionEffect(new PotionEffect(jumpBoost, duration, 128, false, false));
-                
-                if (plugin.getConfigManager().isBroadcastGameEvents()) {
-                    hunter.sendMessage("§cYou have been frozen by the runner!");
-                }
-            }
-        }, 0L, interval);
-    }
-
-    /**
-     * Refresh freeze mechanic task and reapply inactive effects/modes at runtime.
-     * Safe to call while game is running.
-     */
-    public void refreshFreezeMechanic() {
-        if (freezeCheckTask != null) {
-            freezeCheckTask.cancel();
-            freezeCheckTask = null;
-        }
-        if (gameRunning && plugin.getConfigManager().isFreezeMechanicEnabled()) {
-            startFreezeChecking();
-        }
-        if (gameRunning) {
-            applyInactiveEffects();
-            // If CAGE mode is not selected anymore, ensure cages are removed
-            if (!"CAGE".equalsIgnoreCase(plugin.getConfigManager().getFreezeMode())) {
-                cleanupAllCages();
-            }
-        }
-    }
+    // Removed: hunter freeze mechanic
     
     private void performSwap() {
         if (!gameRunning || gamePaused || runners.isEmpty()) {
@@ -693,28 +565,27 @@ public class GameManager {
             savePlayerState(activeRunner);
         }
 
-        // Advance to next online runner
-        int attempts = 0;
+        // Rotate the queue: head -> tail until the next online runner is at index 0
+        if (runners.isEmpty()) { pauseGame(); return; }
+        int guard = 0;
         do {
-            activeRunnerIndex = (activeRunnerIndex + 1) % runners.size();
-            attempts++;
-            if (attempts >= runners.size()) {
+            Player head = runners.remove(0);
+            runners.add(head);
+            guard++;
+            if (guard > 64) {
                 plugin.getLogger().warning("No online runners found during swap - pausing game");
                 pauseGame();
                 return;
             }
-        } while (!runners.get(activeRunnerIndex).isOnline());
+        } while (!runners.get(0).isOnline());
 
-        Player nextRunner = runners.get(activeRunnerIndex);
+        Player nextRunner = runners.get(0);
         Player previousRunner = activeRunner;
 
-        // Handle single-runner scenario gracefully: just refresh timers/powerups
+        // Handle single-runner scenario gracefully: just refresh timers
         if (previousRunner != null && previousRunner.equals(nextRunner)) {
             // Keep the same active runner; just reschedule next swap and apply optional power-up
             scheduleNextSwap();
-            if (plugin.getConfigManager().isPowerUpsEnabled()) {
-                applyRandomPowerUp(nextRunner);
-            }
             return;
         }
 
@@ -762,29 +633,12 @@ public class GameManager {
             previousRunner.getInventory().setArmorContents(new ItemStack[]{});
             previousRunner.getInventory().setItemInOffHand(null);
             previousRunner.updateInventory();
-        } else {
-            // First-time activation (no previous runner). If kits enabled, give runner kit.
-            if (plugin.getConfigManager().isKitsEnabled()) {
-                nextRunner.getInventory().clear();
-                plugin.getKitManager().giveKit(nextRunner, "runner");
-            }
         }
 
         applyInactiveEffects();
         scheduleNextSwap();
 
         // Suppress public chat broadcast on swap per request
-
-        if (plugin.getConfigManager().isPowerUpsEnabled()) {
-            applyRandomPowerUp(nextRunner);
-        }
-
-        if (plugin.getConfigManager().isCompassJammingEnabled()) {
-            long duration = plugin.getConfigManager().getCompassJamDuration();
-            if (duration > 0) {
-                plugin.getTrackerManager().jamCompasses(duration);
-            }
-        }
     }
 
     /** Trigger an immediate runner swap (admin action) */
@@ -793,88 +647,7 @@ public class GameManager {
         Bukkit.getScheduler().runTask(plugin, this::performSwap);
     }
 
-    /** Trigger an immediate hunter shuffle (admin action) */
-    public void triggerImmediateHunterSwap() {
-        if (!gameRunning || gamePaused) return;
-        Bukkit.getScheduler().runTask(plugin, this::performHunterSwap);
-    }
-    
-    private void performHunterSwap() {
-        if (!gameRunning || gamePaused || hunters.size() < 2) {
-            return;
-        }
-
-        Collections.shuffle(hunters);
-        plugin.getTrackerManager().updateAllHunterCompasses();
-
-        if (plugin.getConfigManager().isBroadcastsEnabled()) {
-            Bukkit.broadcast("§c[SpeedrunnerSwap] Hunters have been swapped!", Server.BROADCAST_CHANNEL_USERS);
-        }
-    }
-    
-    private void applyRandomPowerUp(Player player) {
-        java.util.List<String> good = plugin.getConfigManager().getGoodPowerUps();
-        java.util.List<String> bad = plugin.getConfigManager().getBadPowerUps();
-
-        java.util.List<PotionEffectType> goodTypes = new java.util.ArrayList<>();
-        java.util.List<PotionEffectType> badTypes = new java.util.ArrayList<>();
-
-        for (String id : good) {
-            PotionEffectType t = resolveEffect(id);
-            if (t != null) goodTypes.add(t);
-        }
-        for (String id : bad) {
-            PotionEffectType t = resolveEffect(id);
-            if (t != null) badTypes.add(t);
-        }
-
-        // Fallbacks if config lists are empty or invalid
-        if (goodTypes.isEmpty()) {
-            String[] defaults = {"speed", "regeneration", "resistance", "night_vision", "dolphins_grace"};
-            for (String k : defaults) {
-                PotionEffectType t = BukkitCompat.resolvePotionEffect(k);
-                if (t != null) goodTypes.add(t);
-            }
-            if (goodTypes.isEmpty()) {
-                // Ultra-safe baseline
-                PotionEffectType t = BukkitCompat.resolvePotionEffect("speed");
-                if (t != null) goodTypes.add(t);
-            }
-        }
-        if (badTypes.isEmpty()) {
-            String[] defaults = {"slowness", "weakness", "hunger", "darkness", "glowing"};
-            for (String k : defaults) {
-                PotionEffectType t = BukkitCompat.resolvePotionEffect(k);
-                if (t != null) badTypes.add(t);
-            }
-            if (badTypes.isEmpty()) {
-                PotionEffectType t = BukkitCompat.resolvePotionEffect("slowness");
-                if (t != null) badTypes.add(t);
-            }
-        }
-
-        boolean isGoodEffect = ThreadLocalRandom.current().nextBoolean();
-        java.util.List<PotionEffectType> effectPool = isGoodEffect ? goodTypes : badTypes;
-        PotionEffectType effectType = effectPool.get(ThreadLocalRandom.current().nextInt(effectPool.size()));
-        
-        int duration = ThreadLocalRandom.current().nextInt(10, 21) * 20;
-        int amplifier = ThreadLocalRandom.current().nextInt(2);
-        
-        player.addPotionEffect(new PotionEffect(effectType, duration, amplifier));
-        
-        String effectName = effectType.getKey().getKey().replace("_", " ").toLowerCase();
-        String effectLevel = amplifier == 0 ? "I" : "II";
-        
-        player.sendMessage(String.format("§%sYou received a %s power-up: %s %s!",
-                isGoodEffect ? "a" : "c",
-                isGoodEffect ? "good" : "bad",
-                effectName,
-                effectLevel));
-    }
-
-    private PotionEffectType resolveEffect(String id) {
-        return BukkitCompat.resolvePotionEffect(id);
-    }
+    // Removed: hunter shuffle and power-up mechanics
 
     /**
      * Pause the game
@@ -887,9 +660,7 @@ public class GameManager {
         if (swapTask != null) {
             swapTask.cancel();
         }
-        if (hunterSwapTask != null) {
-            hunterSwapTask.cancel();
-        }
+        
         if (actionBarTask != null) {
             actionBarTask.cancel();
         }
@@ -908,7 +679,6 @@ public class GameManager {
         }
         gamePaused = false;
         scheduleNextSwap();
-        scheduleNextHunterSwap();
         startActionBarUpdates();
         startTitleUpdates();
         startCageEnforcement();
@@ -920,30 +690,32 @@ public class GameManager {
         return gamePaused;
     }
 
+    /** Shuffle the runner queue while keeping the current active runner in front */
+    public boolean shuffleQueue() {
+        if (runners == null || runners.size() < 2) return false;
+        Player current = activeRunner;
+        java.util.List<Player> rest = new java.util.ArrayList<>();
+        for (Player p : runners) {
+            if (!p.equals(current)) rest.add(p);
+        }
+        java.util.Collections.shuffle(rest, new java.util.Random());
+        java.util.List<Player> newOrder = new java.util.ArrayList<>();
+        newOrder.add(current);
+        newOrder.addAll(rest);
+        runners = newOrder;
+        applyInactiveEffects();
+        refreshActionBar();
+        return true;
+    }
+
     /** Replace runners list and update config team names */
     public void setRunners(java.util.List<Player> players) {
         java.util.List<String> names = new java.util.ArrayList<>();
         for (Player p : players) names.add(p.getName());
         // Clear and set in config atomically
         plugin.getConfigManager().setRunnerNames(names);
-        // Also ensure no overlap: remove these names from hunters in config
-        java.util.List<String> currentHunters = plugin.getConfigManager().getHunterNames();
-        currentHunters.removeAll(names);
-        plugin.getConfigManager().setHunterNames(currentHunters);
         // Update runtime list
         this.runners = new java.util.ArrayList<>(players);
-    }
-
-    /** Replace hunters list and update config team names */
-    public void setHunters(java.util.List<Player> players) {
-        java.util.List<String> names = new java.util.ArrayList<>();
-        for (Player p : players) names.add(p.getName());
-        plugin.getConfigManager().setHunterNames(names);
-        // Ensure no overlap: remove from runners
-        java.util.List<String> currentRunners = plugin.getConfigManager().getRunnerNames();
-        currentRunners.removeAll(names);
-        plugin.getConfigManager().setRunnerNames(currentRunners);
-        this.hunters = new java.util.ArrayList<>(players);
     }
 
     private void updateTitles() {
@@ -981,10 +753,10 @@ public class GameManager {
         if (runner == null || !runner.isOnline()) return;
         if (builtCages.containsKey(runner.getUniqueId())) return;
 
-        // Base world/location from limbo config world; center spaced by runner index
+        // Build cage in the runner's current world to avoid cross-dimension edge cases
         Location base = plugin.getConfigManager().getLimboLocation();
-        World world = base.getWorld() != null ? base.getWorld() : runner.getWorld();
-        int y = world.getMaxHeight() - 10;
+        World world = runner.getWorld();
+        int y = findSafeCageY(world, base.getBlockY());
         int index = Math.max(0, runners.indexOf(runner));
         int spacing = 10;
         int cx = (int) Math.round(base.getX()) + index * spacing;
@@ -992,8 +764,16 @@ public class GameManager {
         // Place center at the cage floor level (top of the bedrock floor),
         // so standing on the floor does not get treated as "outside" and yo-yo teleport.
         Location center = new Location(world, cx + 0.5, y, cz + 0.5);
-        // Ensure chunk is loaded
-        center.getChunk().load(true);
+        // Ensure surrounding chunks are loaded (3x3 around center)
+        try {
+            int ccx = center.getBlockX() >> 4;
+            int ccz = center.getBlockZ() >> 4;
+            for (int dcx = -1; dcx <= 1; dcx++) {
+                for (int dcz = -1; dcz <= 1; dcz++) {
+                    world.getChunkAt(ccx + dcx, ccz + dcz).load(true);
+                }
+            }
+        } catch (Throwable ignored) {}
 
         java.util.List<org.bukkit.block.BlockState> changed = new java.util.ArrayList<>();
         // Build 5x5x5 cube of bedrock with 3x3x3 air cavity, plus extended floor to catch glitches
@@ -1042,6 +822,22 @@ public class GameManager {
         }
     }
 
+    // Pick a safe Y to build the 5x5x5 cage that avoids world min/max and nether ceiling issues
+    private int findSafeCageY(World world, int preferredY) {
+        int min = world.getMinHeight() + 6;  // allow shell thickness
+        int max = world.getMaxHeight() - 6;
+        int target = preferredY;
+        if (target < min || target > max) {
+            // Choose defaults by environment
+            switch (world.getEnvironment()) {
+                case NETHER -> target = Math.min(max, Math.max(min, 96));
+                case THE_END -> target = Math.min(max, Math.max(min, 80));
+                default -> target = Math.min(max, Math.max(min, max - 10));
+            }
+        }
+        return target;
+    }
+
     private void cleanupAllCages() {
         java.util.Set<java.util.UUID> ids = new java.util.HashSet<>(builtCages.keySet());
         for (java.util.UUID id : ids) {
@@ -1061,6 +857,11 @@ public class GameManager {
             for (Player r : runners) {
                 if (r.equals(activeRunner)) continue;
                 if (!r.isOnline()) continue;
+                // If player's world changed, rebuild their cage in the new world
+                org.bukkit.Location existing = cageCenters.get(r.getUniqueId());
+                if (existing != null && existing.getWorld() != r.getWorld()) {
+                    removeCageFor(r);
+                }
                 // Ensure cage exists
                 createCageFor(r);
                 org.bukkit.Location center = cageCenters.get(r.getUniqueId());

@@ -42,10 +42,12 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
                     return handleResume(sender);
                 case "status":
                     return handleStatus(sender);
+                case "shuffle":
+                    return handleShuffle(sender);
+                case "maker":
+                    return handleMaker(sender);
                 case "setrunners":
                     return handleSetRunners(sender, Arrays.copyOfRange(args, 1, args.length));
-                case "sethunters":
-                    return handleSetHunters(sender, Arrays.copyOfRange(args, 1, args.length));
                 case "reload":
                     return handleReload(sender);
                 case "gui":
@@ -70,29 +72,22 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
             return false;
         }
 
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
 
-        if (plugin.getGuiManager() == null) {
-            sender.sendMessage("§cError: GUI Manager not initialized properly. Please report this to the plugin developer.");
-            plugin.getLogger().log(Level.SEVERE, "GUI Manager is null when trying to open main menu");
-            return false;
-        }
-
-        try {
-            plugin.getGuiManager().openMainMenu((Player) sender);
-            return true;
-        } catch (Exception e) {
-            sender.sendMessage("§cError opening GUI: " + e.getMessage());
-            plugin.getLogger().log(Level.SEVERE, "Error opening GUI for player " + sender.getName(), e);
-            return false;
-        }
+        // Print quick help since GUI is removed in ControlSwap
+        sender.sendMessage("§6ControlSwap Commands:");
+        sender.sendMessage("§e/swap setrunners <names>§7 — set runners");
+        sender.sendMessage("§e/swap start|stop|pause|resume§7 — control game");
+        sender.sendMessage("§e/swap status§7 — show status");
+        sender.sendMessage("§e/swap reload§7 — reload config");
+        return true;
     }
     
     private boolean handleStart(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -113,7 +108,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
     }
     
     private boolean handleStop(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -130,7 +125,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
     }
     
     private boolean handlePause(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -156,7 +151,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
     }
     
     private boolean handleResume(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -182,12 +177,12 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
     }
     
     private boolean handleStatus(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
         
-        sender.sendMessage("§6=== SpeedrunnerSwap Status ===");
+        sender.sendMessage("§6=== ControlSwap Status ===");
         sender.sendMessage("§eGame Running: §f" + plugin.getGameManager().isGameRunning());
         sender.sendMessage("§eGame Paused: §f" + plugin.getGameManager().isGamePaused());
         
@@ -197,22 +192,64 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§eTime Until Next Swap: §f" + plugin.getGameManager().getTimeUntilNextSwap() + "s");
             
             List<Player> runners = plugin.getGameManager().getRunners();
-            List<Player> hunters = plugin.getGameManager().getHunters();
             
             sender.sendMessage("§eRunners: §f" + runners.stream()
                     .map(Player::getName)
                     .collect(Collectors.joining(", ")));
             
-            sender.sendMessage("§eHunters: §f" + hunters.stream()
-                    .map(Player::getName)
-                    .collect(Collectors.joining(", ")));
+            // No hunters in ControlSwap
         }
         
         return true;
     }
+
+    private boolean handleShuffle(CommandSender sender) {
+        if (!sender.hasPermission("controlswap.admin")) {
+            sender.sendMessage("§cYou don't have permission to use this command.");
+            return false;
+        }
+
+        boolean ok = plugin.getGameManager().shuffleQueue();
+        if (ok) {
+            sender.sendMessage("§aShuffled runner queue (active stays active).");
+        } else {
+            sender.sendMessage("§cNot enough runners to shuffle.");
+        }
+        return ok;
+    }
+
+    private boolean handleMaker(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Created by muj3b — donate: " + plugin.getConfig().getString("donation.url", "https://donate.stripe.com/8x29AT0H58K03judnR0Ba01"));
+            return true;
+        }
+
+        Player player = (Player) sender;
+
+        // Chat message with clickable donate link
+        String donateUrl = plugin.getConfig().getString("donation.url", "https://donate.stripe.com/8x29AT0H58K03judnR0Ba01");
+        net.kyori.adventure.text.Component header = net.kyori.adventure.text.Component.text("ControlSwap created by muj3b")
+                .color(net.kyori.adventure.text.format.NamedTextColor.GOLD)
+                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD);
+        net.kyori.adventure.text.Component donate = net.kyori.adventure.text.Component.text("❤ Click to Donate")
+                .color(net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE)
+                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD)
+                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(net.kyori.adventure.text.Component.text("Open donation page")))
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(donateUrl));
+        player.sendMessage(header);
+        player.sendMessage(donate);
+
+        // Open a small About GUI with a creator head in the top-right corner
+        try {
+            new com.example.speedrunnerswap.gui.AboutGui(plugin).openFor(player);
+        } catch (Throwable t) {
+            // ignore if GUI fails for any reason
+        }
+        return true;
+    }
     
     private boolean handleSetRunners(CommandSender sender, String[] playerNames) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
+        if (!sender.hasPermission("controlswap.command")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -245,42 +282,10 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
         return true;
     }
     
-    private boolean handleSetHunters(CommandSender sender, String[] playerNames) {
-        if (!sender.hasPermission("speedrunnerswap.command")) {
-            sender.sendMessage("§cYou don't have permission to use this command.");
-            return false;
-        }
-        
-        if (playerNames.length == 0) {
-            sender.sendMessage("§cUsage: /swap sethunters <player1> [player2] [player3] ...");
-            return false;
-        }
-        
-        List<Player> players = new ArrayList<>();
-        for (String name : playerNames) {
-            Player player = Bukkit.getPlayerExact(name);
-            if (player != null) {
-                players.add(player);
-            } else {
-                sender.sendMessage("§cPlayer not found: " + name);
-            }
-        }
-        
-        if (players.isEmpty()) {
-            sender.sendMessage("§cNo valid players specified.");
-            return false;
-        }
-        
-        plugin.getGameManager().setHunters(players);
-        sender.sendMessage("§aHunters set: " + players.stream()
-                .map(Player::getName)
-                .collect(Collectors.joining(", ")));
-        
-        return true;
-    }
+    // No hunters in ControlSwap
     
     private boolean handleReload(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.admin")) {
+        if (!sender.hasPermission("controlswap.admin")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -298,7 +303,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleClearTeams(CommandSender sender) {
-        if (!sender.hasPermission("speedrunnerswap.admin")) {
+        if (!sender.hasPermission("controlswap.admin")) {
             sender.sendMessage("§cYou don't have permission to use this command.");
             return false;
         }
@@ -309,8 +314,7 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
         }
 
         plugin.getGameManager().setRunners(new ArrayList<>());
-        plugin.getGameManager().setHunters(new ArrayList<>());
-        sender.sendMessage("§aCleared all teams (runners and hunters).");
+        sender.sendMessage("§aCleared all runners.");
         return true;
     }
     
@@ -320,15 +324,15 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
         
         if (args.length == 1) {
             // Subcommands
-            List<String> subCommands = Arrays.asList("start", "stop", "pause", "resume", "status", "setrunners", "sethunters", "reload", "gui", "clearteams");
+            List<String> subCommands = Arrays.asList("start", "stop", "pause", "resume", "status", "shuffle", "maker", "setrunners", "reload", "gui", "clearteams");
             for (String subCommand : subCommands) {
                 if (subCommand.startsWith(args[0].toLowerCase())) {
                     completions.add(subCommand);
                 }
             }
         } else if (args.length > 1) {
-            // Player names for setrunners and sethunters
-            if (args[0].equalsIgnoreCase("setrunners") || args[0].equalsIgnoreCase("sethunters")) {
+            // Player names for setrunners
+            if (args[0].equalsIgnoreCase("setrunners")) {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     String name = player.getName();
                     if (name.toLowerCase().startsWith(args[args.length - 1].toLowerCase())) {

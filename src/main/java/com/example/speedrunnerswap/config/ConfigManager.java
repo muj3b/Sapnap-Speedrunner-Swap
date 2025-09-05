@@ -17,9 +17,7 @@ public class ConfigManager {
     private final SpeedrunnerSwap plugin;
     private FileConfiguration config;
     private List<String> runnerNames;
-    private List<String> hunterNames;
     private Set<Material> dangerousBlocks;
-    private boolean powerUpsEnabled;
     
     public ConfigManager(SpeedrunnerSwap plugin) {
         this.plugin = plugin;
@@ -95,9 +93,8 @@ public class ConfigManager {
         plugin.reloadConfig();
         config = plugin.getConfig();
         
-        // Load team lists
+        // Load runner list
         runnerNames = config.getStringList("teams.runners");
-        hunterNames = config.getStringList("teams.hunters");
         
         // Load dangerous blocks
         dangerousBlocks = new HashSet<>();
@@ -110,18 +107,15 @@ public class ConfigManager {
             }
         }
 
-        // Load power-ups settings (canonical path: power_ups.enabled)
-        this.powerUpsEnabled = config.getBoolean("power_ups.enabled", false);
-        config.set("power_ups.enabled", this.powerUpsEnabled); // Ensure config is in sync
+        // No power-ups in ControlSwap
     }
     
     /**
      * Save the configuration
      */
     public void saveConfig() {
-        // Update team lists in config
+        // Update runner list in config
         config.set("teams.runners", runnerNames);
-        config.set("teams.hunters", hunterNames);
         
         plugin.saveConfig();
     }
@@ -134,8 +128,6 @@ public class ConfigManager {
         String name = player.getName();
         if (!runnerNames.contains(name)) {
             runnerNames.add(name);
-            // Remove from hunters if present
-            hunterNames.remove(name);
         }
     }
     
@@ -147,38 +139,9 @@ public class ConfigManager {
         runnerNames.remove(player.getName());
     }
 
-    // PowerUps management methods
-    public boolean isPowerUpsEnabled() {
-        // Return cached value; stays in sync via loadConfig()/setPowerUpsEnabled()
-        return this.powerUpsEnabled;
-    }
-
-    public void setPowerUpsEnabled(boolean enabled) {
-        this.powerUpsEnabled = enabled;
-        config.set("power_ups.enabled", enabled);
-        saveConfig();
-    }
+    // Power-ups removed in ControlSwap
     
-    /**
-     * Add a player to the hunters list
-     * @param player The player to add
-     */
-    public void addHunter(Player player) {
-        String name = player.getName();
-        if (!hunterNames.contains(name)) {
-            hunterNames.add(name);
-            // Remove from runners if present
-            runnerNames.remove(name);
-        }
-    }
-    
-    /**
-     * Remove a player from the hunters list
-     * @param player The player to remove
-     */
-    public void removeHunter(Player player) {
-        hunterNames.remove(player.getName());
-    }
+    // No hunters in ControlSwap
     
     /**
      * Get the list of runner names
@@ -188,13 +151,7 @@ public class ConfigManager {
         return new ArrayList<>(runnerNames);
     }
     
-    /**
-     * Get the list of hunter names
-     * @return The list of hunter names
-     */
-    public List<String> getHunterNames() {
-        return new ArrayList<>(hunterNames);
-    }
+    // No hunters in ControlSwap
 
     /**
      * Replace the entire runners name list in memory and persist
@@ -207,16 +164,7 @@ public class ConfigManager {
         saveConfig();
     }
 
-    /**
-     * Replace the entire hunters name list in memory and persist
-     * @param names list of player names
-     */
-    public void setHunterNames(java.util.List<String> names) {
-        if (names == null) names = java.util.Collections.emptyList();
-        this.hunterNames.clear();
-        this.hunterNames.addAll(names);
-        saveConfig();
-    }
+    // No hunters in ControlSwap
     
     /**
      * Check if a player is a runner
@@ -227,14 +175,7 @@ public class ConfigManager {
         return runnerNames.contains(player.getName());
     }
     
-    /**
-     * Check if a player is a hunter
-     * @param player The player to check
-     * @return True if the player is a hunter
-     */
-    public boolean isHunter(Player player) {
-        return hunterNames.contains(player.getName());
-    }
+    // No hunters in ControlSwap
     
     /**
      * Get whether swap randomization is enabled
@@ -314,14 +255,7 @@ public class ConfigManager {
         plugin.saveConfig();
     }
 
-    public boolean isVoiceChatIntegrationEnabled() {
-        return config.getBoolean("voice_chat.enabled", false);
-    }
-
-    public void setVoiceChatIntegrationEnabled(boolean enabled) {
-        config.set("voice_chat.enabled", enabled);
-        plugin.saveConfig();
-    }
+    // Voice chat integration removed
 
     public String getFreezeMode() {
         return config.getString("freeze_mode", "LIMBO");
@@ -345,26 +279,7 @@ public class ConfigManager {
         plugin.saveConfig();
     }
 
-    public boolean isTrackerEnabled() {
-        return config.getBoolean("tracker.enabled", true);
-    }
-
-    public void setTrackerEnabled(boolean enabled) {
-        config.set("tracker.enabled", enabled);
-        plugin.saveConfig();
-    }
-
-    public int getTrackerUpdateTicks() {
-        return config.getInt("tracker.update_ticks", 20);
-    }
-
-    public boolean isParticleTrailEnabled() {
-        return config.getBoolean("particle_trail.enabled", false);
-    }
-
-    public int getParticleSpawnInterval() {
-        return config.getInt("particle_trail.spawn_interval", 5);
-    }
+    // Tracking removed
 
     public String getParticleTrailType() {
         return config.getString("particle_trail.type", "DUST");
@@ -463,9 +378,7 @@ public class ConfigManager {
         return config.getBoolean("broadcasts.team_changes", true);
     }
 
-    public boolean isMuteInactiveRunners() {
-        return config.getBoolean("voice_chat.mute_inactive_runners", true);
-    }
+    // Voice chat mute removed
 
     /**
      * Get whether the freeze mechanic is enabled
@@ -519,162 +432,13 @@ public class ConfigManager {
      * Get the timer visibility setting for hunters
      * @return The visibility setting ("always", "last_10", or "never")
      */
-    public String getHunterTimerVisibility() {
-        return config.getString("timer_visibility.hunter_visibility", "never");
-    }
+    // Hunter visibility and tracker settings removed
 
-    public boolean isCompassJammingEnabled() {
-        return config.getBoolean("tracker.compass_jamming.enabled", false);
-    }
+    // Power-ups removed
 
-    public int getCompassJamDuration() {
-        return config.getInt("tracker.compass_jamming.duration_ticks", 100);
-    }
+    // Last stand removed
 
-    // End portal hint per-world (used when target is in THE_END)
-    public org.bukkit.Location getEndPortalHint(org.bukkit.World world) {
-        if (world == null) return null;
-        String base = "tracker.end_portal_hint." + world.getName();
-        if (!config.contains(base + ".x")) return null;
-        double x = config.getDouble(base + ".x", world.getSpawnLocation().getX());
-        double y = config.getDouble(base + ".y", world.getSpawnLocation().getY());
-        double z = config.getDouble(base + ".z", world.getSpawnLocation().getZ());
-        return new org.bukkit.Location(world, x, y, z);
-    }
-
-    public void setEndPortalHint(org.bukkit.World world, org.bukkit.Location loc) {
-        if (world == null || loc == null) return;
-        String base = "tracker.end_portal_hint." + world.getName();
-        config.set(base + ".x", loc.getX());
-        config.set(base + ".y", loc.getY());
-        config.set(base + ".z", loc.getZ());
-        plugin.saveConfig();
-    }
-
-    public void clearEndPortalHint(org.bukkit.World world) {
-        if (world == null) return;
-        String base = "tracker.end_portal_hint." + world.getName();
-        config.set(base, null);
-        plugin.saveConfig();
-    }
-
-    public boolean isHunterSwapEnabled() {
-        return config.getBoolean("swap.hunter_swap.enabled", false);
-    }
-
-    public int getHunterSwapInterval() {
-        return config.getInt("swap.hunter_swap.interval", 60);
-    }
-
-    public List<String> getGoodPowerUps() {
-        return config.getStringList("power_ups.good_effects");
-    }
-
-    public List<String> getBadPowerUps() {
-        return config.getStringList("power_ups.bad_effects");
-    }
-
-    // Power-up timing and level ranges
-    public int getPowerUpsMinSeconds() {
-        return Math.max(1, config.getInt("power_ups.duration.min_seconds", 10));
-    }
-
-    public int getPowerUpsMaxSeconds() {
-        int min = getPowerUpsMinSeconds();
-        int max = config.getInt("power_ups.duration.max_seconds", 20);
-        return Math.max(min, max);
-    }
-
-    public void setPowerUpsMinSeconds(int seconds) {
-        seconds = Math.max(1, seconds);
-        int max = getPowerUpsMaxSeconds();
-        if (seconds > max) {
-            config.set("power_ups.duration.max_seconds", seconds);
-        }
-        config.set("power_ups.duration.min_seconds", seconds);
-        plugin.saveConfig();
-    }
-
-    public void setPowerUpsMaxSeconds(int seconds) {
-        seconds = Math.max(getPowerUpsMinSeconds(), seconds);
-        config.set("power_ups.duration.max_seconds", seconds);
-        plugin.saveConfig();
-    }
-
-    public int getPowerUpsMinLevel() {
-        return Math.max(1, config.getInt("power_ups.level.min", 1));
-    }
-
-    public int getPowerUpsMaxLevel() {
-        int min = getPowerUpsMinLevel();
-        int max = config.getInt("power_ups.level.max", 2);
-        return Math.max(min, max);
-    }
-
-    public void setPowerUpsMinLevel(int level) {
-        level = Math.max(1, level);
-        int max = getPowerUpsMaxLevel();
-        if (level > max) {
-            config.set("power_ups.level.max", level);
-        }
-        config.set("power_ups.level.min", level);
-        plugin.saveConfig();
-    }
-
-    public void setPowerUpsMaxLevel(int level) {
-        level = Math.max(getPowerUpsMinLevel(), level);
-        config.set("power_ups.level.max", level);
-        plugin.saveConfig();
-    }
-
-    public boolean isLastStandEnabled() {
-        return config.getBoolean("last_stand.enabled", false);
-    }
-
-    public int getLastStandDuration() {
-        return config.getInt("last_stand.duration_ticks", 600); // 30 seconds
-    }
-
-    public int getLastStandStrengthAmplifier() {
-        return config.getInt("last_stand.strength_amplifier", 1);
-    }
-
-    public int getLastStandSpeedAmplifier() {
-        return config.getInt("last_stand.speed_amplifier", 1);
-    }
-
-    public boolean isKitsEnabled() {
-        return config.getBoolean("kits.enabled", false);
-    }
-
-    /**
-     * Set whether kits are enabled
-     * @param enabled true to enable kits
-     */
-    public void setKitsEnabled(boolean enabled) {
-        config.set("kits.enabled", enabled);
-        plugin.saveConfig();
-        // Keep kits.yml flag in sync for clarity
-        try {
-            org.bukkit.configuration.file.FileConfiguration kits = plugin.getKitConfigManager().getConfig();
-            kits.set("kits.enabled", enabled);
-            plugin.getKitConfigManager().saveConfig();
-        } catch (Exception ignored) {
-            // If kits.yml isn't available yet, skip silently
-        }
-    }
-
-    public List<String> getRunnerKitItems() {
-        return config.getStringList("kits.runner_kit");
-    }
-
-    public List<String> getHunterKitItems() {
-        return config.getStringList("kits.hunter_kit");
-    }
-
-    public boolean isHotPotatoModeEnabled() {
-        return config.getBoolean("swap.hot_potato_mode.enabled", false);
-    }
+    // Kits and hot potato removed
 
 
 
@@ -696,12 +460,5 @@ public class ConfigManager {
         plugin.saveConfig();
     }
 
-    /**
-     * Set the timer visibility setting for hunters
-     * @param visibility The visibility setting ("always", "last_10", or "never")
-     */
-    public void setHunterTimerVisibility(String visibility) {
-        config.set("timer_visibility.hunter_visibility", visibility);
-        plugin.saveConfig();
-    }
+    // Hunter timer visibility removed
 }
