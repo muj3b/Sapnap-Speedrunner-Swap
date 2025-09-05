@@ -39,13 +39,13 @@ public final class BukkitCompat {
      * potentially-removed fields directly. Tries names in order.
      */
     public static Attribute resolveAttribute(String... names) {
-        // Avoid calling deprecated Attribute#valueOf(String) and steer clear of
-        // Enum.valueOf generics weirdness in some IDE setups by scanning values.
+        // Avoid deprecated Attribute.values() / name() by using reflection
         for (String name : names) {
-            for (Attribute a : Attribute.values()) {
-                if (a.name().equals(name)) {
-                    return a;
-                }
+            try {
+                java.lang.reflect.Field f = Attribute.class.getField(name);
+                Object v = f.get(null);
+                if (v instanceof Attribute) return (Attribute) v;
+            } catch (Throwable ignored) {
             }
         }
         return null;
