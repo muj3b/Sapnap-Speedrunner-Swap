@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 // Use compat resolver for cross-version effect lookups
-import com.example.speedrunnerswap.utils.BukkitCompat;
+// no compat helpers used directly in this class
 
 public class GameManager {
     private final SpeedrunnerSwap plugin;
