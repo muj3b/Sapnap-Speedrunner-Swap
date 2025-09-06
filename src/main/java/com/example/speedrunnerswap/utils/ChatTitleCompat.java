@@ -30,12 +30,13 @@ public final class ChatTitleCompat {
             return;
         } catch (Throwable ignored) {
         }
-        // Fallback: legacy sendTitle(String, String, int, int, int) (ticks)
+        // Fallback: legacy sendTitle(String, String, int, int, int) via reflection (avoid deprecation warnings)
         try {
             int fi = (int) Math.max(0, fadeInMs / 50);
             int st = (int) Math.max(0, stayMs / 50);
             int fo = (int) Math.max(0, fadeOutMs / 50);
-            player.sendTitle(title != null ? title : "", subtitle != null ? subtitle : "", fi, st, fo);
+            java.lang.reflect.Method legacy = player.getClass().getMethod("sendTitle", String.class, String.class, int.class, int.class, int.class);
+            legacy.invoke(player, title != null ? title : "", subtitle != null ? subtitle : "", fi, st, fo);
         } catch (Throwable ignored) {
         }
     }
@@ -56,4 +57,3 @@ public final class ChatTitleCompat {
         player.sendMessage(message);
     }
 }
-

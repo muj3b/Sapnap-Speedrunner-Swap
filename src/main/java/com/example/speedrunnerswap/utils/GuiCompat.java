@@ -1,7 +1,6 @@
 package com.example.speedrunnerswap.utils;
 
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -27,7 +26,13 @@ public final class GuiCompat {
         } catch (Throwable ignored) {
         }
         // Fallback: String title variant
-        return Bukkit.createInventory(null, size, title);
+        // Fallback: call deprecated String-title constructor via reflection to avoid compile-time deprecation
+        try {
+            java.lang.reflect.Method m = Bukkit.class.getMethod("createInventory", org.bukkit.inventory.InventoryHolder.class, int.class, String.class);
+            return (Inventory) m.invoke(null, null, size, title);
+        } catch (Throwable ignored) {}
+        // Last resort: untitled inventory
+        return Bukkit.createInventory(null, size);
     }
 
     /** Get the plain title of an InventoryView across API variants. */

@@ -15,7 +15,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.GameMode;
-import java.time.Duration;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -177,6 +176,11 @@ public class GameManager {
     /** Stop the game without declaring a winner */
     public void stopGame() {
         endGame(null);
+    }
+
+    /** Convenience: end game declaring runners win (for listeners). */
+    public void endGameRunnerWin() {
+        endGame(Team.RUNNER);
     }
 
     /**

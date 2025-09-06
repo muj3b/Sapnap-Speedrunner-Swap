@@ -2,8 +2,6 @@ package com.example.speedrunnerswap.gui;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -140,17 +138,10 @@ public class ControlGui {
                 sm.setOwningPlayer(p);
                 // Name + lore via compat wrappers
                 com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(sm, p.getName());
-                List<Component> lore = new ArrayList<>();
                 boolean isSel = selected.contains(p.getName());
-                lore.add(Component.text(isSel ? "Selected: Yes" : "Selected: No").color(isSel ? NamedTextColor.GREEN : NamedTextColor.RED));
-                try { sm.lore(lore); } catch (Throwable ignored) {
-                    // Fallback for non-component lore
-                    ItemMeta im = icon.getItemMeta();
-                    java.util.List<String> legacy = new java.util.ArrayList<>();
-                    legacy.add(isSel ? "Selected: Yes" : "Selected: No");
-                    com.example.speedrunnerswap.utils.GuiCompat.setLore(im, legacy);
-                    icon.setItemMeta(im);
-                }
+                java.util.List<String> legacy = new java.util.ArrayList<>();
+                legacy.add(isSel ? "Selected: Yes" : "Selected: No");
+                com.example.speedrunnerswap.utils.GuiCompat.setLore(sm, legacy);
                 icon.setItemMeta(sm);
             } catch (Throwable t) {
                 ItemMeta im = icon.getItemMeta();

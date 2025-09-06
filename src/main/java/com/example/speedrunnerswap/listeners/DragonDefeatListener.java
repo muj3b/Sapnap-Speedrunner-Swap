@@ -1,7 +1,6 @@
 package com.example.speedrunnerswap.listeners;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
-import com.example.speedrunnerswap.models.Team;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,6 +20,6 @@ public class DragonDefeatListener implements Listener {
         }
 
         // End the game with runners as winners
-        plugin.getGameManager().endGame(Team.RUNNER);
+        plugin.getGameManager().endGameRunnerWin();
     }
 }
