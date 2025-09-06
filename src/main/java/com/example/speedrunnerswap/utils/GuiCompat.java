@@ -16,23 +16,28 @@ public final class GuiCompat {
 
     /** Create an inventory using Component title if available, otherwise String title. */
     public static Inventory createInventory(int size, String title) {
+        return createInventory(null, size, title);
+    }
+
+    /** Create an inventory with a specific holder and a title, across API variants. */
+    public static Inventory createInventory(org.bukkit.inventory.InventoryHolder holder, int size, String title) {
         // Try Bukkit.createInventory(InventoryHolder, int, Component) reflectively
         try {
             Class<?> component = Class.forName("net.kyori.adventure.text.Component");
             java.lang.reflect.Method text = component.getMethod("text", String.class);
             Object comp = text.invoke(null, title);
             java.lang.reflect.Method create = Bukkit.class.getMethod("createInventory", org.bukkit.inventory.InventoryHolder.class, int.class, component);
-            return (Inventory) create.invoke(null, null, size, comp);
+            return (Inventory) create.invoke(null, holder, size, comp);
         } catch (Throwable ignored) {
         }
         // Fallback: String title variant
         // Fallback: call deprecated String-title constructor via reflection to avoid compile-time deprecation
         try {
             java.lang.reflect.Method m = Bukkit.class.getMethod("createInventory", org.bukkit.inventory.InventoryHolder.class, int.class, String.class);
-            return (Inventory) m.invoke(null, null, size, title);
+            return (Inventory) m.invoke(null, holder, size, title);
         } catch (Throwable ignored) {}
         // Last resort: untitled inventory
-        return Bukkit.createInventory(null, size);
+        return Bukkit.createInventory(holder, size);
     }
 
     /** Get the plain title of an InventoryView across API variants. */

@@ -49,9 +49,15 @@ public class EventListeners implements Listener {
         Player player = (Player) event.getWhoClicked();
         Inventory inventory = event.getClickedInventory();
         ItemStack clickedItem = event.getCurrentItem();
-    
+
         if (inventory == null || clickedItem == null || clickedItem.getType() == Material.AIR) return;
-    
+
+        // If this is one of our control GUIs, let the GUI listener handle it
+        Inventory top = event.getView().getTopInventory();
+        if (top != null && top.getHolder() instanceof com.example.speedrunnerswap.gui.ControlGuiHolder) {
+            return;
+        }
+
         // No GUI or hunter compass management in ControlSwap
 
         // For non-GUI inventories, enforce runner interaction rules and sync

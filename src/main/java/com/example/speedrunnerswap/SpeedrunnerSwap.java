@@ -37,6 +37,8 @@ public final class SpeedrunnerSwap extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DragonDefeatListener(this), this);
         // Register control GUI interactions
         getServer().getPluginManager().registerEvents(new com.example.speedrunnerswap.gui.ControlGuiListener(this), this);
+        // About window interactions (donation link)
+        getServer().getPluginManager().registerEvents(new com.example.speedrunnerswap.gui.AboutGuiListener(this), this);
         
         // Log startup with version
         // Prefer Paper's getPluginMeta() via reflection; fallback to deprecated getDescription() via reflection

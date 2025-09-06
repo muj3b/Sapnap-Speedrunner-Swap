@@ -1,7 +1,6 @@
 package com.example.speedrunnerswap.gui;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
-import com.example.speedrunnerswap.utils.GuiCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -30,31 +29,55 @@ public class ControlGuiListener implements Listener {
         this.plugin = plugin;
     }
 
-    private boolean isMain(String title) {
-        return title != null && title.equals(plugin.getConfigManager().getGuiMainMenuTitle());
+    private boolean isMain(Inventory inv) {
+        return inv != null && inv.getHolder() instanceof ControlGuiHolder holder && holder.getType() == ControlGuiHolder.Type.MAIN;
     }
 
-    private boolean isRunnerSelector(String title) {
-        return title != null && title.equals(plugin.getConfigManager().getGuiTeamSelectorTitle());
+    private boolean isRunnerSelector(Inventory inv) {
+        return inv != null && inv.getHolder() instanceof ControlGuiHolder holder && holder.getType() == ControlGuiHolder.Type.RUNNER_SELECTOR;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        Inventory view = event.getView().getTopInventory();
-        if (view == null) return;
-        String title = GuiCompat.getTitle(event.getView());
-
-        if (!isMain(title) && !isRunnerSelector(title)) return;
+        Inventory top = event.getView().getTopInventory();
+        if (top == null) return;
+        if (!isMain(top) && !isRunnerSelector(top)) return;
         event.setCancelled(true);
 
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null || clicked.getType() == Material.AIR) return;
 
-        if (isMain(title)) {
+        if (isMain(top)) {
             handleMainClick(player, clicked);
-        } else if (isRunnerSelector(title)) {
-            handleRunnerSelectorClick(player, clicked, event.getRawSlot(), view.getSize());
+        } else if (isRunnerSelector(top)) {
+            handleRunnerSelectorClick(player, clicked, event.getRawSlot(), top.getSize());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Inventory top = event.getView().getTopInventory();
+        if (top == null) return;
+        if (!isMain(top) && !isRunnerSelector(top)) return;
+        // Cancel any drag that touches the top inventory
+        for (int rawSlot : event.getRawSlots()) {
+            if (rawSlot < top.getSize()) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        Inventory top = event.getView().getTopInventory();
+        if (top == null) return;
+        if (isRunnerSelector(top)) {
+            // Drop any temporary selection when closing runner selector without saving
+            pendingRunnerSelections.remove(player.getUniqueId());
         }
     }
 

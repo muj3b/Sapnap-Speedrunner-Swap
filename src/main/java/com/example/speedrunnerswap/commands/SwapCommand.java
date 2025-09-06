@@ -236,19 +236,9 @@ public class SwapCommand implements CommandExecutor, TabCompleter {
         }
 
         Player player = (Player) sender;
-
-        // Chat message with clickable donate link
         String donateUrl = plugin.getConfig().getString("donation.url", "https://donate.stripe.com/8x29AT0H58K03judnR0Ba01");
-        net.kyori.adventure.text.Component header = net.kyori.adventure.text.Component.text("ControlSwap created by muj3b")
-                .color(net.kyori.adventure.text.format.NamedTextColor.GOLD)
-                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD);
-        net.kyori.adventure.text.Component donate = net.kyori.adventure.text.Component.text("❤ Click to Donate")
-                .color(net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE)
-                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD)
-                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(net.kyori.adventure.text.Component.text("Open donation page")))
-                .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(donateUrl));
-        player.sendMessage(header);
-        player.sendMessage(donate);
+        com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, "§6§lControlSwap created by muj3b");
+        com.example.speedrunnerswap.utils.ChatTitleCompat.sendClickableUrl(player, "§d§l❤ Donate: §r", donateUrl);
         return true;
     }
     

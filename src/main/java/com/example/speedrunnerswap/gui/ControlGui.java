@@ -22,7 +22,7 @@ public class ControlGui {
         int size = rows * 9;
         String title = plugin.getConfigManager().getGuiMainMenuTitle();
 
-        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(size, title);
+        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(new ControlGuiHolder(ControlGuiHolder.Type.MAIN), size, title);
 
         // Filler
         ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
@@ -117,7 +117,7 @@ public class ControlGui {
         int rows = Math.max(2, plugin.getConfigManager().getGuiTeamSelectorRows());
         int size = rows * 9;
         String title = plugin.getConfigManager().getGuiTeamSelectorTitle();
-        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(size, title);
+        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(new ControlGuiHolder(ControlGuiHolder.Type.RUNNER_SELECTOR), size, title);
 
         // Filler
         ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);

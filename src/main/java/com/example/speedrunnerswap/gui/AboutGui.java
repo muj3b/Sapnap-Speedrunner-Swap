@@ -18,7 +18,7 @@ public class AboutGui {
     public AboutGui() {}
 
     public void openFor(Player player) {
-        Inventory inv = GuiCompat.createInventory(9, TITLE);
+        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(new ControlGuiHolder(ControlGuiHolder.Type.ABOUT), 9, TITLE);
 
         // Filler panes
         ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
