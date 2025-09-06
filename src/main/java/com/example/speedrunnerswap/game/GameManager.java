@@ -553,6 +553,27 @@ public class GameManager {
                     runner.updateInventory();
                 } catch (Exception ignored) {}
 
+                // Normalize inactive players' core stats so only the active runner carries state
+                try {
+                    // Full health to avoid deaths while waiting
+                    runner.setHealth(BukkitCompat.getMaxHealthValue(runner));
+                } catch (Throwable ignored) {}
+                try {
+                    // Keep hunger full but saturation zero to prevent natural regen ticks
+                    runner.setFoodLevel(20);
+                    runner.setSaturation(0f);
+                    runner.setExhaustion(0f);
+                } catch (Throwable ignored) {}
+                try {
+                    // Clear XP so queued players don't retain bars
+                    runner.setExp(0f);
+                    runner.setLevel(0);
+                    runner.setTotalExperience(0);
+                } catch (Throwable ignored) {}
+                try { runner.setAbsorptionAmount(0d); } catch (Throwable ignored) {}
+                try { runner.setFireTicks(0); } catch (Throwable ignored) {}
+                try { runner.setFallDistance(0f); } catch (Throwable ignored) {}
+
                 for (Player viewer : Bukkit.getOnlinePlayers()) {
                     if (!viewer.equals(runner)) {
                         com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, runner);
@@ -811,6 +832,21 @@ public class GameManager {
                 player.getInventory().setItemInOffHand(null);
                 player.updateInventory();
             } catch (Exception ignored) {}
+            // And normalize their stats as well (avoid healing/XP retention while queued)
+            try { player.setHealth(BukkitCompat.getMaxHealthValue(player)); } catch (Throwable ignored) {}
+            try {
+                player.setFoodLevel(20);
+                player.setSaturation(0f);
+                player.setExhaustion(0f);
+            } catch (Throwable ignored) {}
+            try {
+                player.setExp(0f);
+                player.setLevel(0);
+                player.setTotalExperience(0);
+            } catch (Throwable ignored) {}
+            try { player.setAbsorptionAmount(0d); } catch (Throwable ignored) {}
+            try { player.setFireTicks(0); } catch (Throwable ignored) {}
+            try { player.setFallDistance(0f); } catch (Throwable ignored) {}
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.equals(player)) com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, player);
             }

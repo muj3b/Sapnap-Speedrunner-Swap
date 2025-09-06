@@ -71,10 +71,11 @@ public class PlayerStateUtil {
         player.setSaturation(state.getSaturation());
         player.setExhaustion(state.getExhaustion());
         
-        // Apply XP
-        player.setTotalExperience(state.getTotalExperience());
-        player.setExp(state.getExp());
+        // Apply XP (order matters across Bukkit variants)
+        // Set bar/level first, then total to keep them in sync reliably
         player.setLevel(state.getLevel());
+        player.setExp(state.getExp());
+        player.setTotalExperience(state.getTotalExperience());
         
         // Apply other attributes
         player.setFireTicks(state.getFireTicks());
