@@ -1,12 +1,8 @@
 package com.example.speedrunnerswap.gui;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import com.example.speedrunnerswap.utils.ChatTitleCompat;
+import com.example.speedrunnerswap.utils.GuiCompat;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -30,7 +26,7 @@ public class AboutGuiListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
+        String title = GuiCompat.getTitle(event.getView());
         if (!isAbout(title)) return;
 
         event.setCancelled(true); // purely informational
@@ -40,13 +36,7 @@ public class AboutGuiListener implements Listener {
 
         // Click on the creator head posts the donate link
         String donateUrl = plugin.getConfig().getString("donation.url", "https://donate.stripe.com/8x29AT0H58K03judnR0Ba01");
-        Component donate = Component.text("❤ Click to Donate")
-                .color(NamedTextColor.LIGHT_PURPLE)
-                .decorate(TextDecoration.BOLD)
-                .hoverEvent(HoverEvent.showText(Component.text("Open donation page")))
-                .clickEvent(ClickEvent.openUrl(donateUrl));
-        player.sendMessage(Component.text("ControlSwap created by muj3b").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
-        player.sendMessage(donate);
+        ChatTitleCompat.sendMessage(player, "§6§lControlSwap created by muj3b");
+        ChatTitleCompat.sendMessage(player, "§d§l❤ Donate: " + donateUrl);
     }
 }
-

@@ -26,12 +26,12 @@ public class ControlGui {
         int size = rows * 9;
         String title = plugin.getConfigManager().getGuiMainMenuTitle();
 
-        Inventory inv = Bukkit.createInventory(null, size, Component.text(title));
+        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(size, title);
 
         // Filler
         ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta fm = filler.getItemMeta();
-        fm.displayName(Component.text(" "));
+        com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(fm, " ");
         filler.setItemMeta(fm);
         for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, filler);
 
@@ -121,12 +121,12 @@ public class ControlGui {
         int rows = Math.max(2, plugin.getConfigManager().getGuiTeamSelectorRows());
         int size = rows * 9;
         String title = plugin.getConfigManager().getGuiTeamSelectorTitle();
-        Inventory inv = Bukkit.createInventory(null, size, Component.text(title));
+        Inventory inv = com.example.speedrunnerswap.utils.GuiCompat.createInventory(size, title);
 
         // Filler
         ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta fm = filler.getItemMeta();
-        fm.displayName(Component.text(" "));
+        com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(fm, " ");
         filler.setItemMeta(fm);
         for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, filler);
 
@@ -138,15 +138,23 @@ public class ControlGui {
             try {
                 org.bukkit.inventory.meta.SkullMeta sm = (org.bukkit.inventory.meta.SkullMeta) icon.getItemMeta();
                 sm.setOwningPlayer(p);
-                sm.displayName(Component.text(p.getName()).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+                // Name + lore via compat wrappers
+                com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(sm, p.getName());
                 List<Component> lore = new ArrayList<>();
                 boolean isSel = selected.contains(p.getName());
                 lore.add(Component.text(isSel ? "Selected: Yes" : "Selected: No").color(isSel ? NamedTextColor.GREEN : NamedTextColor.RED));
-                sm.lore(lore);
+                try { sm.lore(lore); } catch (Throwable ignored) {
+                    // Fallback for non-component lore
+                    ItemMeta im = icon.getItemMeta();
+                    java.util.List<String> legacy = new java.util.ArrayList<>();
+                    legacy.add(isSel ? "Selected: Yes" : "Selected: No");
+                    com.example.speedrunnerswap.utils.GuiCompat.setLore(im, legacy);
+                    icon.setItemMeta(im);
+                }
                 icon.setItemMeta(sm);
             } catch (Throwable t) {
                 ItemMeta im = icon.getItemMeta();
-                im.displayName(Component.text(p.getName()));
+                com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(im, p.getName());
                 icon.setItemMeta(im);
             }
             if (idx < size - 9) {
@@ -165,11 +173,9 @@ public class ControlGui {
     private ItemStack named(Material mat, String name, List<String> loreText) {
         ItemStack it = new ItemStack(mat);
         ItemMeta im = it.getItemMeta();
-        im.displayName(Component.text(name).color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD));
+        com.example.speedrunnerswap.utils.GuiCompat.setDisplayName(im, name);
         if (loreText != null && !loreText.isEmpty()) {
-            List<Component> lore = new ArrayList<>();
-            for (String s : loreText) lore.add(Component.text(s).color(NamedTextColor.GRAY));
-            im.lore(lore);
+            com.example.speedrunnerswap.utils.GuiCompat.setLore(im, loreText);
         }
         it.setItemMeta(im);
         return it;

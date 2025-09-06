@@ -1,5 +1,5 @@
 package com.example.speedrunnerswap.gui;
-import net.kyori.adventure.text.Component;
+import com.example.speedrunnerswap.utils.GuiCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -18,12 +18,12 @@ public class AboutGui {
     public AboutGui() {}
 
     public void openFor(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 9, Component.text(TITLE));
+        Inventory inv = GuiCompat.createInventory(9, TITLE);
 
         // Filler panes
         ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta fm = filler.getItemMeta();
-        fm.displayName(Component.text(" "));
+        GuiCompat.setDisplayName(fm, " ");
         filler.setItemMeta(fm);
         for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, filler);
 
@@ -34,10 +34,10 @@ public class AboutGui {
             OfflinePlayer creator = Bukkit.getOfflinePlayer("muj3b");
             meta.setOwningPlayer(creator);
         } catch (Throwable ignored) {}
-        meta.displayName(Component.text("Creator: muj3b"));
-        List<Component> lore = new ArrayList<>();
-        lore.add(Component.text("Click to open donation link"));
-        meta.lore(lore);
+        GuiCompat.setDisplayName(meta, "Creator: muj3b");
+        List<String> lore = new ArrayList<>();
+        lore.add("Click to open donation link");
+        GuiCompat.setLore(meta, lore);
         head.setItemMeta(meta);
         inv.setItem(8, head);
 

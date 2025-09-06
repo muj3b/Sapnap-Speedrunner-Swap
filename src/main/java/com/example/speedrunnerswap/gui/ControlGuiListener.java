@@ -1,7 +1,7 @@
 package com.example.speedrunnerswap.gui;
 
 import com.example.speedrunnerswap.SpeedrunnerSwap;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import com.example.speedrunnerswap.utils.GuiCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -43,7 +43,7 @@ public class ControlGuiListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         Inventory view = event.getView().getTopInventory();
         if (view == null) return;
-        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
+        String title = GuiCompat.getTitle(event.getView());
 
         if (!isMain(title) && !isRunnerSelector(title)) return;
         event.setCancelled(true);
@@ -110,8 +110,7 @@ public class ControlGuiListener implements Listener {
 
         if (type == Material.CLOCK) {
             // Distinguish which clock was clicked by its display name
-            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                    .serialize(clicked.getItemMeta().displayName());
+            String name = com.example.speedrunnerswap.utils.GuiCompat.getDisplayName(clicked.getItemMeta());
             if (name.startsWith("Runner Timer:")) {
                 String current = plugin.getConfigManager().getRunnerTimerVisibility();
                 String next = switch (current.toLowerCase()) {
@@ -150,7 +149,7 @@ public class ControlGuiListener implements Listener {
             plugin.getConfigManager().setFreezeMode(next);
             player.sendMessage("§eInactive runner state: §a" + next);
             // Re-apply to all
-            plugin.getGameManager().refreshActionBar();
+            plugin.getGameManager().reapplyStates();
             new ControlGui(plugin).openMainMenu(player);
             return;
         }
@@ -164,8 +163,7 @@ public class ControlGuiListener implements Listener {
         }
 
         if (type == Material.ARROW) {
-            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                    .serialize(clicked.getItemMeta().displayName());
+            String name = com.example.speedrunnerswap.utils.GuiCompat.getDisplayName(clicked.getItemMeta());
             int interval = plugin.getConfigManager().getSwapInterval();
             if (name.contains("-5")) interval -= 5; else if (name.contains("+5")) interval += 5;
             plugin.getConfigManager().setSwapInterval(interval);
@@ -227,8 +225,7 @@ public class ControlGuiListener implements Listener {
 
         // Toggle player selection based on the head name
         if (type == Material.PLAYER_HEAD) {
-            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                    .serialize(clicked.getItemMeta().displayName());
+            String name = com.example.speedrunnerswap.utils.GuiCompat.getDisplayName(clicked.getItemMeta());
             if (name == null || name.isBlank()) return;
             Set<String> sel = pendingRunnerSelections.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>(plugin.getConfigManager().getRunnerNames()));
             if (sel.contains(name)) sel.remove(name); else sel.add(name);

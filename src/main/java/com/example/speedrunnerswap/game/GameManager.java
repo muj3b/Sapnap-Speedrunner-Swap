@@ -8,9 +8,6 @@ import com.example.speedrunnerswap.utils.SafeLocationFinder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.title.Title;
 import org.bukkit.Location;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -70,14 +67,10 @@ public class GameManager {
             @Override
             public void run() {
                 if (count > 0) {
-                    Title title = Title.title(
-                        Component.text("Starting in " + count).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD),
-                        Component.text("Made by muj3b").color(NamedTextColor.GRAY),
-                        Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(3500), Duration.ofMillis(500))
-                    );
-                    
+                    String t = "Starting in " + count;
+                    String s = "Made by muj3b";
                     for (Player player : Bukkit.getOnlinePlayers()) {
-                        player.showTitle(title);
+                        com.example.speedrunnerswap.utils.ChatTitleCompat.showTitle(player, t, s, 500, 3500, 500);
                     }
                     count--;
                 } else {
@@ -108,26 +101,19 @@ public class GameManager {
             return;
         }
 
-        Component titleText;
+        String titleText;
         String runnerSubtitle = "";
 
         if (winner == Team.RUNNER) {
-            titleText = Component.text("RUNNERS WIN!", NamedTextColor.GREEN, TextDecoration.BOLD);
+            titleText = "RUNNERS WIN!";
             runnerSubtitle = "Great run!";
         } else {
-            titleText = Component.text("GAME OVER", NamedTextColor.RED, TextDecoration.BOLD);
+            titleText = "GAME OVER";
             runnerSubtitle = "No winner declared.";
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            Component subtitleText = Component.text(runnerSubtitle, NamedTextColor.YELLOW);
-
-            Title endTitle = Title.title(
-                titleText,
-                subtitleText,
-                Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(5000), Duration.ofMillis(500))
-            );
-            player.showTitle(endTitle);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.showTitle(player, titleText, runnerSubtitle, 500, 5000, 500);
         }
 
         if (swapTask != null) swapTask.cancel();
@@ -177,24 +163,17 @@ public class GameManager {
             "https://donate.stripe.com/8x29AT0H58K03judnR0Ba01"
         );
 
-        Component spacer = Component.text("");
-        Component header = Component.text("=== Support the Creator ===")
-            .color(NamedTextColor.GOLD)
-            .decorate(TextDecoration.BOLD);
-        Component desc = Component.text("Enjoyed the game? Help keep updates coming!")
-            .color(NamedTextColor.YELLOW);
-        Component donate = Component.text("❤ Click to Donate")
-            .color(NamedTextColor.LIGHT_PURPLE)
-            .decorate(TextDecoration.BOLD)
-            .hoverEvent(HoverEvent.showText(Component.text("Open donation page", NamedTextColor.GOLD)))
-            .clickEvent(ClickEvent.openUrl(donateUrl));
+        String spacer = "";
+        String header = "§6§l=== Support the Creator ===";
+        String desc = "§eEnjoyed the game? Help keep updates coming!";
+        String donate = "§d§l❤ Donate: " + donateUrl;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(spacer);
-            player.sendMessage(header);
-            player.sendMessage(desc);
-            player.sendMessage(donate);
-            player.sendMessage(spacer);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, spacer);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, header);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, desc);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, donate);
+            com.example.speedrunnerswap.utils.ChatTitleCompat.sendMessage(player, spacer);
         }
     }
     /** Stop the game without declaring a winner */
@@ -570,6 +549,12 @@ public class GameManager {
             }
         }
     }
+
+    /** Public hook for GUI/actions to re-apply active/inactive effects and cages */
+    public void reapplyStates() {
+        if (!gameRunning) return;
+        applyInactiveEffects();
+    }
     
     // Removed: hunter freeze mechanic
     
@@ -746,9 +731,7 @@ public class GameManager {
         boolean isSneak = current != null && current.isSneaking();
         boolean isSprint = current != null && current.isSprinting();
 
-        net.kyori.adventure.text.Component sub = net.kyori.adventure.text.Component.text(
-                String.format("Sneaking: %s  |  Running: %s", isSneak ? "Yes" : "No", isSprint ? "Yes" : "No"))
-                .color(NamedTextColor.YELLOW);
+        String sub = String.format("Sneaking: %s  |  Running: %s", isSneak ? "Yes" : "No", isSprint ? "Yes" : "No");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (!runners.contains(p)) continue; // Only runners get titles
@@ -768,17 +751,8 @@ public class GameManager {
             }
             if (!showTitle) continue;
 
-            net.kyori.adventure.text.Component titleText = net.kyori.adventure.text.Component.text(
-                    String.format("Swap in: %ds", Math.max(0, timeLeft)))
-                    .color(isActive ? NamedTextColor.RED : NamedTextColor.GOLD)
-                    .decorate(TextDecoration.BOLD);
-
-            Title title = Title.title(
-                    titleText,
-                    sub,
-                    Title.Times.times(Duration.ZERO, Duration.ofMillis(600), Duration.ZERO)
-            );
-            p.showTitle(title);
+            String titleText = String.format("Swap in: %ds", Math.max(0, timeLeft));
+            com.example.speedrunnerswap.utils.ChatTitleCompat.showTitle(p, titleText, sub, 0, 600, 0);
         }
     }
 
