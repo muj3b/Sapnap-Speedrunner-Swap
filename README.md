@@ -26,7 +26,7 @@ https://www.youtube.com/watch?v=GwrAvYlT7xg
 ### 🔄 Queue‑Based Swapping
 - 2 players: simple alternation; the active runner swaps every interval.
 - 3+ players: the first active runner is chosen at random, then the queue rotates each swap.
-- Everyone shares inventory, health, XP, effects, and position.
+- Inventory transfers to the new active runner at swap time; inactive runners have empty inventories. Health, XP, effects, and position still follow the active runner.
 
 ### 🕶 Inactive Runners
 - See a blacked‑out, frozen view (freeze mode configurable).
@@ -136,6 +136,11 @@ Changes apply immediately; timer HUD refreshes on the spot.
 - If a caged runner changes worlds, the old cage is removed and rebuilt in the new world automatically.
 
 ---
+
+## 🧼 Changes (v1.3)
+
+- Inactive runners no longer mirror the active runner’s inventory. Only the newly active runner receives the inventory at swap.
+- Additional guards to keep inactive inventories empty across world changes.
 
 ## 🧼 Stability Improvements (v1.2)
 

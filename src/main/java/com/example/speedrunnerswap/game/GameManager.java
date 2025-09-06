@@ -545,7 +545,14 @@ public class GameManager {
                     try { runner.setAllowFlight(true); } catch (Exception ignored) {}
                     try { runner.setFlying(false); } catch (Exception ignored) {}
                 }
-                
+                // Ensure inactive runners do not see or hold any inventory until swapped in
+                try {
+                    runner.getInventory().clear();
+                    runner.getInventory().setArmorContents(new ItemStack[]{});
+                    runner.getInventory().setItemInOffHand(null);
+                    runner.updateInventory();
+                } catch (Exception ignored) {}
+
                 for (Player viewer : Bukkit.getOnlinePlayers()) {
                     if (!viewer.equals(runner)) {
                         com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, runner);
@@ -797,6 +804,13 @@ public class GameManager {
                 try { player.setAllowFlight(true); } catch (Exception ignored) {}
                 try { player.setFlying(false); } catch (Exception ignored) {}
             }
+            // Keep inactive runners' inventories empty on world change
+            try {
+                player.getInventory().clear();
+                player.getInventory().setArmorContents(new ItemStack[]{});
+                player.getInventory().setItemInOffHand(null);
+                player.updateInventory();
+            } catch (Exception ignored) {}
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.equals(player)) com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, player);
             }

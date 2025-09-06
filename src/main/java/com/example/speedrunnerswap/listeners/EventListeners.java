@@ -60,7 +60,7 @@ public class EventListeners implements Listener {
 
         // No GUI or hunter compass management in ControlSwap
 
-        // For non-GUI inventories, enforce runner interaction rules and sync
+        // For non-GUI inventories, enforce runner interaction rules (no syncing)
         if (plugin.getGameManager().isGameRunning() && plugin.getGameManager().isRunner(player)) {
             if (plugin.getGameManager().getActiveRunner() != player) {
                 // Inactive runners can't interact
@@ -70,11 +70,7 @@ public class EventListeners implements Listener {
                 }
                 return;
             } else {
-                // Active runner inventory updates
-                if (event.getView().getType() != InventoryType.WORKBENCH) {
-                    // Schedule sync for next tick to let the current operation complete
-                    plugin.getServer().getScheduler().runTask(plugin, () -> syncRunnerInventories(player));
-                }
+                // Active runner may interact normally; do not sync to others
             }
         }
     }
@@ -112,37 +108,7 @@ public class EventListeners implements Listener {
         plugin.getGameManager().handlePlayerChangedWorld(event.getPlayer());
     }
 
-    /**
-     * Synchronize inventories between all runners, with crafting protection
-     * @param sourcePlayer The player whose inventory should be copied to others
-     */
-    private void syncRunnerInventories(Player sourcePlayer) {
-        if (!plugin.getGameManager().isGameRunning() || !plugin.getGameManager().isRunner(sourcePlayer)) return;
-        
-        // Don't sync while crafting to avoid state corruption
-        if (sourcePlayer.getOpenInventory().getType() == InventoryType.WORKBENCH) {
-            return;
-        }
-        
-        ItemStack[] contents = sourcePlayer.getInventory().getContents();
-        ItemStack[] armor = sourcePlayer.getInventory().getArmorContents();
-        ItemStack offhand = sourcePlayer.getInventory().getItemInOffHand();
-        
-        for (Player runner : plugin.getGameManager().getRunners()) {
-            if (runner != sourcePlayer && runner.isOnline() && 
-                runner.getOpenInventory().getType() != InventoryType.WORKBENCH) {
-                    
-                runner.getInventory().setContents(contents.clone());
-                runner.getInventory().setArmorContents(armor.clone());
-                if (offhand != null) {
-                    runner.getInventory().setItemInOffHand(offhand.clone());
-                } else {
-                    runner.getInventory().setItemInOffHand(null);
-                }
-                runner.updateInventory();
-            }
-        }
-    }
+    // Removed inventory syncing: inactive runners no longer mirror active inventory
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
