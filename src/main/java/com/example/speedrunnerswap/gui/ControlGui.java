@@ -65,15 +65,51 @@ public class ControlGui {
         inv.setItem(22, named(Material.COMPARATOR, randomize ? "Randomize: ON" : "Randomize: OFF",
                 List.of("Toggle randomized intervals")));
 
-        // Runner timer visibility toggle (Full vs Last 10s)
+        // Runner timer visibility (cycle FULL/LAST 10s/HIDDEN)
         String runnerVis = plugin.getConfigManager().getRunnerTimerVisibility();
-        boolean fullTimer = "always".equalsIgnoreCase(runnerVis);
+        String runnerLabel = switch (runnerVis.toLowerCase()) {
+            case "always" -> "FULL";
+            case "never" -> "HIDDEN";
+            default -> "LAST 10s";
+        };
         inv.setItem(20, named(
                 Material.CLOCK,
-                fullTimer ? "Runner Timer: FULL" : "Runner Timer: LAST 10s",
-                List.of("Toggle active runner timer visibility",
-                        "Full = always show",
-                        "Last 10s = only when <= 10s")));
+                "Runner Timer: " + runnerLabel,
+                List.of("Cycle active runner timer visibility",
+                        "FULL / LAST 10s / HIDDEN")));
+
+        // Waiting timer visibility (cycle FULL/LAST 10s/HIDDEN)
+        String waitingVis = plugin.getConfigManager().getWaitingTimerVisibility();
+        String waitingLabel = switch (waitingVis.toLowerCase()) {
+            case "last_10" -> "LAST 10s";
+            case "never" -> "HIDDEN";
+            default -> "FULL";
+        };
+        inv.setItem(21, named(
+                Material.CLOCK,
+                "Waiting Timer: " + waitingLabel,
+                List.of("Cycle waiting runner timer visibility",
+                        "FULL / LAST 10s / HIDDEN")));
+
+        // Interval display and adjusters
+        int interval = plugin.getConfigManager().getSwapInterval();
+        inv.setItem(23, named(Material.PAPER, "Interval: " + interval + "s", List.of("Base swap interval")));
+        inv.setItem(18, named(Material.ARROW, "-5s", List.of("Decrease interval")));
+        inv.setItem(26, named(Material.ARROW, "+5s", List.of("Increase interval")));
+
+        // Freeze mode cycle
+        String freeze = plugin.getConfigManager().getFreezeMode();
+        inv.setItem(4, named(Material.ARMOR_STAND, "Inactive Runner State: " + freeze, List.of(
+                "EFFECTS: Blind/Dark/Slow",
+                "SPECTATOR: Spectator mode",
+                "LIMBO: Teleport to limbo",
+                "CAGE: Bedrock cage (robust)")));
+
+        // Safe Swap toggle
+        boolean safeSwap = plugin.getConfigManager().isSafeSwapEnabled();
+        inv.setItem(6, named(safeSwap ? Material.SLIME_BLOCK : Material.MAGMA_BLOCK,
+                safeSwap ? "Safe Swap: ON" : "Safe Swap: OFF",
+                List.of("Avoid lava/cactus/fire on teleports")));
 
         // Status
         inv.setItem(24, named(Material.PAPER, "Status", List.of("Show current status in chat")));

@@ -280,17 +280,20 @@ public class GameManager {
      * Update teams after player join/leave
      */
     public void updateTeams() {
+        // Rebuild runner list from configured names to re-include returning players
         List<Player> newRunners = new ArrayList<>();
-
-        for (Player runner : runners) {
-            if (runner.isOnline()) {
-                newRunners.add(runner);
-            }
+        for (String name : plugin.getConfigManager().getRunnerNames()) {
+            Player p = Bukkit.getPlayerExact(name);
+            if (p != null && p.isOnline()) newRunners.add(p);
         }
-        
         runners = newRunners;
 
-        // If all runners disconnect, pause instead of ending the game
+        // Ensure activeRunner reference is still valid
+        if (activeRunner != null && !runners.contains(activeRunner)) {
+            activeRunner = runners.isEmpty() ? null : runners.get(0);
+        }
+
+        // If all runners disconnect, pause instead of ending the game (if configured)
         if (gameRunning && runners.isEmpty()) {
                 if (plugin.getConfigManager().isPauseOnDisconnect()) {
                     pauseGame();
@@ -314,6 +317,9 @@ public class GameManager {
         if (!gameRunning) {
             return;
         }
+
+        // Cleanup any existing cage for this player to avoid leftover blocks
+        removeCageFor(player);
 
         if (player.equals(activeRunner)) {
             if (plugin.getConfigManager().isPauseOnDisconnect()) {
@@ -571,6 +577,10 @@ public class GameManager {
         if (!gameRunning || gamePaused || runners.isEmpty()) {
             return;
         }
+
+        // Remove offline players from the queue before swapping
+        runners.removeIf(p -> p == null || !p.isOnline());
+        if (runners.isEmpty()) { pauseGame(); return; }
 
         // Persist the current active runner's state before swapping
         if (activeRunner != null && activeRunner.isOnline()) {

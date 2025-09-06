@@ -11,6 +11,8 @@ swap:
   randomize: false
   # Base interval in seconds (or mean if randomized)
   interval: 60
+  # Automatically resume when a runner rejoins after a pause-on-disconnect
+  auto_resume_on_join: true
   # Min and max interval in seconds (only used if randomize is true)
   min_interval: 30
   max_interval: 90

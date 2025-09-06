@@ -48,11 +48,13 @@ https://www.youtube.com/watch?v=GwrAvYlT7xg
 | 🎛️ Feature | 📝 Description |
 |:---|:---|
 | **Queue System** | Any number of runners; rotates fairly on every swap |
-| **Countdown & Queue HUD** | Active sees timer; others see “Queued (n)”/“You’re up next” |
+| **Countdown & Queue HUD** | Active sees timer (last 10s default); waiting see full time |
 | **Customizable Swaps** | Fixed or randomized intervals, jitter, grace period, pause on disconnect |
+| **Smart Auto‑Resume** | If paused due to disconnects, auto‑resumes when a runner rejoins |
 | **Safe Swap** | Avoids lava/fire/cactus etc.; scans for nearby safe blocks |
 | **Freeze Modes** | EFFECTS, SPECTATOR, LIMBO, or CAGE (default) |
 | **Robust CAGE** | Works in Overworld, Nether, and End (safe Y + chunk preload + cross‑world rebuild) |
+| **In‑Game GUI Controls** | Toggle timer visibility, freeze mode, safe swap; adjust interval ±5s |
 | **Broadcasts** | Start/stop notifications and donation link on victory |
 | **1.21.8 API** | Built for Paper/Spigot 1.21.8 with fallbacks for older APIs |
 
@@ -69,6 +71,7 @@ Edit `plugins/ControlSwap/config.yml` after first run.
 - `swap.randomize`: true/false
 - `swap.min_interval` / `swap.max_interval` / `swap.jitter.stddev`
 - `swap.grace_period_ticks`: invulnerability for new active runner
+- `swap.auto_resume_on_join`: auto‑resume after disconnect pause when a runner rejoins (default `true`)
 - `safe_swap.enabled` + `safe_swap.horizontal_radius` / `vertical_distance` / `dangerous_blocks`
 - `freeze_mode`: `EFFECTS` | `SPECTATOR` | `LIMBO` | `CAGE` (default)
 - `timer_visibility.runner_visibility`: `last_10` (default) or `always` or `never`
@@ -112,12 +115,34 @@ Works best on Paper 1.21.8; compatible with Spigot and older 1.21.x via runtime 
 
 ---
 
+## 🧭 GUI Quick Guide
+
+- Start/Stop, Pause/Resume, Shuffle, Set Runners.
+- Runner Timer: cycles FULL / LAST 10s / HIDDEN.
+- Waiting Timer: cycles FULL / LAST 10s / HIDDEN.
+- Interval: press `-5s` or `+5s` to adjust base swap interval; shows current value.
+- Inactive Runner State: cycles EFFECTS → SPECTATOR → LIMBO → CAGE.
+- Safe Swap: toggles hazard‑avoiding teleports.
+
+Changes apply immediately; timer HUD refreshes on the spot.
+
+---
+
 ## 🧱 Notes on CAGE Mode
 
 - Cages are constructed in the player’s current world (not teleported across dimensions).
 - Safe Y is chosen per environment (Overworld/Nether/End) and clamped within the world height.
 - Neighboring chunks are preloaded to prevent partial generation.
 - If a caged runner changes worlds, the old cage is removed and rebuilt in the new world automatically.
+
+---
+
+## 🧼 Stability Improvements (v1.2)
+
+- Queue rebuilds from configured runner names on joins/leaves to avoid losing runners.
+- World change handling ensures cages/effects/visibility are reapplied correctly per player.
+- Proper action bar fallback on Spigot (no chat spam on older servers).
+- Inventory sync off‑hand null‑safety.
 
 ---
 

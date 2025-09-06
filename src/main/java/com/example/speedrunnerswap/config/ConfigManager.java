@@ -230,6 +230,13 @@ public class ConfigManager {
     }
 
     /**
+     * Auto-resume the game when a runner rejoins after a disconnect pause
+     */
+    public boolean isAutoResumeOnJoin() {
+        return config.getBoolean("swap.auto_resume_on_join", true);
+    }
+
+    /**
      * Get the spawn location for players after the game ends.
      * @return The spawn location.
      */

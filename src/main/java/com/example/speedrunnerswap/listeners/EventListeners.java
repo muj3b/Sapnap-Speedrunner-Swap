@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -57,8 +58,10 @@ public class EventListeners implements Listener {
         if (plugin.getGameManager().isGameRunning() && plugin.getGameManager().isRunner(player)) {
             if (plugin.getGameManager().getActiveRunner() != player) {
                 // Inactive runners can't interact
-                event.setCancelled(true);
-                player.sendMessage("§cYou cannot interact with items while inactive!");
+                if (plugin.getConfigManager().isCancelInteractions()) {
+                    event.setCancelled(true);
+                    player.sendMessage("§cYou cannot interact with items while inactive!");
+                }
                 return;
             } else {
                 // Active runner inventory updates
@@ -89,8 +92,9 @@ public class EventListeners implements Listener {
                 if (event.getFrom().getX() != event.getTo().getX() || 
                     event.getFrom().getY() != event.getTo().getY() || 
                     event.getFrom().getZ() != event.getTo().getZ()) {
-                    
-                    event.setCancelled(true);
+                    if (plugin.getConfigManager().isCancelMovement()) {
+                        event.setCancelled(true);
+                    }
                 }
             }
         }
@@ -124,8 +128,37 @@ public class EventListeners implements Listener {
                     
                 runner.getInventory().setContents(contents.clone());
                 runner.getInventory().setArmorContents(armor.clone());
-                runner.getInventory().setItemInOffHand(offhand.clone());
+                if (offhand != null) {
+                    runner.getInventory().setItemInOffHand(offhand.clone());
+                } else {
+                    runner.getInventory().setItemInOffHand(null);
+                }
                 runner.updateInventory();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        // Update runner list from config names and handle state for joiner
+        plugin.getGameManager().updateTeams();
+
+        if (!plugin.getGameManager().isGameRunning()) return;
+
+        Player player = event.getPlayer();
+        // Re-apply state/cage/visibility for this player
+        plugin.getGameManager().handlePlayerChangedWorld(player);
+
+        // Auto-resume if paused due to disconnects and a runner returned
+        if (plugin.getGameManager().isGamePaused() &&
+                plugin.getConfigManager().isPauseOnDisconnect() &&
+                plugin.getConfigManager().isAutoResumeOnJoin()) {
+            boolean anyOnlineRunner = false;
+            for (Player r : plugin.getGameManager().getRunners()) {
+                if (r.isOnline()) { anyOnlineRunner = true; break; }
+            }
+            if (anyOnlineRunner) {
+                plugin.getGameManager().resumeGame();
             }
         }
     }

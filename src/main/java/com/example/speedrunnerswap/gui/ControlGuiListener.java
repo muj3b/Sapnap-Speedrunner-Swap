@@ -109,13 +109,69 @@ public class ControlGuiListener implements Listener {
         }
 
         if (type == Material.CLOCK) {
-            // Toggle runner timer visibility between FULL (always) and LAST 10s (last_10)
-            String current = plugin.getConfigManager().getRunnerTimerVisibility();
-            String next = "always".equalsIgnoreCase(current) ? "last_10" : "always";
-            plugin.getConfigManager().setRunnerTimerVisibility(next);
-            player.sendMessage("§eRunner timer visibility: §a" + ("always".equalsIgnoreCase(next) ? "FULL" : "LAST 10s"));
-            // Immediate HUD refresh
+            // Distinguish which clock was clicked by its display name
+            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                    .serialize(clicked.getItemMeta().displayName());
+            if (name.startsWith("Runner Timer:")) {
+                String current = plugin.getConfigManager().getRunnerTimerVisibility();
+                String next = switch (current.toLowerCase()) {
+                    case "always" -> "last_10";
+                    case "last_10" -> "never";
+                    default -> "always";
+                };
+                plugin.getConfigManager().setRunnerTimerVisibility(next);
+                player.sendMessage("§eRunner timer visibility: §a" + next);
+                plugin.getGameManager().refreshActionBar();
+                new ControlGui(plugin).openMainMenu(player);
+                return;
+            } else if (name.startsWith("Waiting Timer:")) {
+                String current = plugin.getConfigManager().getWaitingTimerVisibility();
+                String next = switch (current.toLowerCase()) {
+                    case "always" -> "last_10";
+                    case "last_10" -> "never";
+                    default -> "always";
+                };
+                plugin.getConfigManager().setWaitingTimerVisibility(next);
+                player.sendMessage("§eWaiting timer visibility: §a" + next);
+                new ControlGui(plugin).openMainMenu(player);
+                return;
+            }
+        }
+
+        if (type == Material.ARMOR_STAND) {
+            // Cycle freeze mode EFFECTS -> SPECTATOR -> LIMBO -> CAGE -> EFFECTS
+            String mode = plugin.getConfigManager().getFreezeMode();
+            String next = switch (mode.toUpperCase()) {
+                case "EFFECTS" -> "SPECTATOR";
+                case "SPECTATOR" -> "LIMBO";
+                case "LIMBO" -> "CAGE";
+                default -> "EFFECTS";
+            };
+            plugin.getConfigManager().setFreezeMode(next);
+            player.sendMessage("§eInactive runner state: §a" + next);
+            // Re-apply to all
             plugin.getGameManager().refreshActionBar();
+            new ControlGui(plugin).openMainMenu(player);
+            return;
+        }
+
+        if (type == Material.SLIME_BLOCK || type == Material.MAGMA_BLOCK) {
+            boolean enabled = plugin.getConfigManager().isSafeSwapEnabled();
+            plugin.getConfigManager().setSafeSwapEnabled(!enabled);
+            player.sendMessage("§eSafe Swap: §a" + (!enabled));
+            new ControlGui(plugin).openMainMenu(player);
+            return;
+        }
+
+        if (type == Material.ARROW) {
+            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                    .serialize(clicked.getItemMeta().displayName());
+            int interval = plugin.getConfigManager().getSwapInterval();
+            if (name.contains("-5")) interval -= 5; else if (name.contains("+5")) interval += 5;
+            plugin.getConfigManager().setSwapInterval(interval);
+            player.sendMessage("§eInterval set to: §a" + plugin.getConfigManager().getSwapInterval() + "s");
+            // Refresh scheduling if running
+            plugin.getGameManager().refreshSwapSchedule();
             new ControlGui(plugin).openMainMenu(player);
             return;
         }

@@ -1,5 +1,5 @@
 name: ControlSwap
-version: '1.0'
+version: '1.2'
 main: com.example.speedrunnerswap.SpeedrunnerSwap
 api-version: '1.21'
 authors: [muj3b]
