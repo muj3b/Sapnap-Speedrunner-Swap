@@ -33,7 +33,8 @@ https://www.youtube.com/watch?v=GwrAvYlT7xg
 - Actionbar shows “Queued (n)” — runner in position 1 sees “You’re up next”.
 
 ### ⏲ Active Runner
-- Sees a countdown “Swap in: Ns” in the actionbar.
+- By default, sees countdown only during the last 10 seconds (actionbar).
+- Toggle to “Full timer” in the GUI if you prefer always-visible.
 
 ### 🎯 Objective
 - Beat the Ender Dragon. When the dragon dies, a clickable donation link is sent to all players.
@@ -70,6 +71,8 @@ Edit `plugins/ControlSwap/config.yml` after first run.
 - `swap.grace_period_ticks`: invulnerability for new active runner
 - `safe_swap.enabled` + `safe_swap.horizontal_radius` / `vertical_distance` / `dangerous_blocks`
 - `freeze_mode`: `EFFECTS` | `SPECTATOR` | `LIMBO` | `CAGE` (default)
+- `timer_visibility.runner_visibility`: `last_10` (default) or `always` or `never`
+- `timer_visibility.waiting_visibility`: `always` (default) or `last_10` or `never`
 - `broadcasts.*`: enable/disable start/stop/team messages
 - `donation.url`: link shown when the dragon dies
 
@@ -126,4 +129,3 @@ Works best on Paper 1.21.8; compatible with Spigot and older 1.21.x via runtime 
 [![Donate](https://img.shields.io/badge/💖_Donate-Support_Development-ff69b4?style=for-the-badge)](https://donate.stripe.com/8x29AT0H58K03judnR0Ba01)
 
 Enjoy — and good luck swapping! 🚀
-

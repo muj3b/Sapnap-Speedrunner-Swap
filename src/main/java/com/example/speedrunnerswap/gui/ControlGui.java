@@ -65,6 +65,16 @@ public class ControlGui {
         inv.setItem(22, named(Material.COMPARATOR, randomize ? "Randomize: ON" : "Randomize: OFF",
                 List.of("Toggle randomized intervals")));
 
+        // Runner timer visibility toggle (Full vs Last 10s)
+        String runnerVis = plugin.getConfigManager().getRunnerTimerVisibility();
+        boolean fullTimer = "always".equalsIgnoreCase(runnerVis);
+        inv.setItem(20, named(
+                Material.CLOCK,
+                fullTimer ? "Runner Timer: FULL" : "Runner Timer: LAST 10s",
+                List.of("Toggle active runner timer visibility",
+                        "Full = always show",
+                        "Last 10s = only when <= 10s")));
+
         // Status
         inv.setItem(24, named(Material.PAPER, "Status", List.of("Show current status in chat")));
 
@@ -129,4 +139,3 @@ public class ControlGui {
         return it;
     }
 }
-

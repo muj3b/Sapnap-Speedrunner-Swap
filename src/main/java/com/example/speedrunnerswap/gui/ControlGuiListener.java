@@ -108,6 +108,18 @@ public class ControlGuiListener implements Listener {
             return;
         }
 
+        if (type == Material.CLOCK) {
+            // Toggle runner timer visibility between FULL (always) and LAST 10s (last_10)
+            String current = plugin.getConfigManager().getRunnerTimerVisibility();
+            String next = "always".equalsIgnoreCase(current) ? "last_10" : "always";
+            plugin.getConfigManager().setRunnerTimerVisibility(next);
+            player.sendMessage("§eRunner timer visibility: §a" + ("always".equalsIgnoreCase(next) ? "FULL" : "LAST 10s"));
+            // Immediate HUD refresh
+            plugin.getGameManager().refreshActionBar();
+            new ControlGui(plugin).openMainMenu(player);
+            return;
+        }
+
         if (type == Material.COMPARATOR) {
             boolean randomize = plugin.getConfigManager().isSwapRandomized();
             plugin.getConfigManager().setSwapRandomized(!randomize);
@@ -169,4 +181,3 @@ public class ControlGuiListener implements Listener {
         }
     }
 }
-

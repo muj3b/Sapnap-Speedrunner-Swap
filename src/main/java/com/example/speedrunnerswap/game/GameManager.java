@@ -480,7 +480,17 @@ public class GameManager {
                 continue;
             }
             if (p.equals(activeRunner)) {
-                String msg = String.format("§eSwap in: §c%ds", Math.max(0, timeLeft));
+                // Respect runner timer visibility setting
+                String vis = plugin.getConfigManager().getRunnerTimerVisibility();
+                boolean show;
+                if ("always".equalsIgnoreCase(vis)) {
+                    show = true;
+                } else if ("last_10".equalsIgnoreCase(vis)) {
+                    show = timeLeft <= 10;
+                } else { // "never"
+                    show = false;
+                }
+                String msg = show ? String.format("§eSwap in: §c%ds", Math.max(0, timeLeft)) : "";
                 com.example.speedrunnerswap.utils.ActionBarUtil.sendActionBar(p, msg);
             } else {
                 int idx = runners.indexOf(p);
@@ -734,8 +744,19 @@ public class GameManager {
             if (!runners.contains(p)) continue; // Only runners get titles
 
             boolean isActive = p.equals(current);
-            boolean shouldShow = !isActive; // waiting: always; active: never (use actionbar for last 10s)
-            if (!shouldShow) continue;
+            // Waiting runners show based on waiting_visibility setting
+            if (isActive) continue; // active uses actionbar according to runner visibility
+
+            String wvis = plugin.getConfigManager().getWaitingTimerVisibility();
+            boolean showTitle;
+            if ("always".equalsIgnoreCase(wvis)) {
+                showTitle = true;
+            } else if ("last_10".equalsIgnoreCase(wvis)) {
+                showTitle = timeLeft <= 10;
+            } else { // "never"
+                showTitle = false;
+            }
+            if (!showTitle) continue;
 
             net.kyori.adventure.text.Component titleText = net.kyori.adventure.text.Component.text(
                     String.format("Swap in: %ds", Math.max(0, timeLeft)))
@@ -749,6 +770,46 @@ public class GameManager {
             );
             p.showTitle(title);
         }
+    }
+
+    /** Handle a player changing worlds to keep queue/cage state consistent */
+    public void handlePlayerChangedWorld(Player player) {
+        if (player == null || !gameRunning) return;
+        if (!runners.contains(player)) return;
+
+        // Re-apply inactive effects/cage or clear them if active
+        if (player.equals(activeRunner)) {
+            // Ensure active runner isn't caged and is visible to all
+            removeCageFor(player);
+            PotionEffectType eff;
+            if ((eff = BukkitCompat.resolvePotionEffect("blindness")) != null) player.removePotionEffect(eff);
+            if ((eff = BukkitCompat.resolvePotionEffect("darkness")) != null) player.removePotionEffect(eff);
+            if ((eff = BukkitCompat.resolvePotionEffect("slowness")) != null) player.removePotionEffect(eff);
+            if ((eff = BukkitCompat.resolvePotionEffect("slow_falling")) != null) player.removePotionEffect(eff);
+            player.setGameMode(GameMode.SURVIVAL);
+            try { player.setAllowFlight(false); } catch (Exception ignored) {}
+            try { player.setFlying(false); } catch (Exception ignored) {}
+            for (Player viewer : Bukkit.getOnlinePlayers()) {
+                com.example.speedrunnerswap.utils.BukkitCompat.showPlayer(plugin, viewer, player);
+            }
+        } else {
+            // Rebuild cage in the new world and ensure effects are applied
+            removeCageFor(player);
+            if ("CAGE".equalsIgnoreCase(plugin.getConfigManager().getFreezeMode())) {
+                createCageFor(player);
+                PotionEffectType blindness = BukkitCompat.resolvePotionEffect("blindness");
+                if (blindness != null) player.addPotionEffect(new PotionEffect(blindness, Integer.MAX_VALUE, 1, false, false));
+                try { player.setAllowFlight(true); } catch (Exception ignored) {}
+                try { player.setFlying(false); } catch (Exception ignored) {}
+            }
+            player.setGameMode("SPECTATOR".equalsIgnoreCase(plugin.getConfigManager().getFreezeMode()) ? GameMode.SPECTATOR : GameMode.ADVENTURE);
+            for (Player viewer : Bukkit.getOnlinePlayers()) {
+                if (!viewer.equals(player)) com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, player);
+            }
+        }
+
+        // Immediate HUD refresh to avoid stale displays during transitions
+        refreshActionBar();
     }
 
     private void createCageFor(Player runner) {
