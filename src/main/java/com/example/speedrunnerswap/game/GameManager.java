@@ -532,6 +532,9 @@ public class GameManager {
                     runner.setGameMode(GameMode.ADVENTURE);
                     PotionEffectType blindness2 = BukkitCompat.resolvePotionEffect("blindness");
                     if (blindness2 != null) runner.addPotionEffect(new PotionEffect(blindness2, Integer.MAX_VALUE, 1, false, false));
+                    // Prevent anti-fly kicks while suspended or over void in limbo
+                    try { runner.setAllowFlight(true); } catch (Exception ignored) {}
+                    try { runner.setFlying(false); } catch (Exception ignored) {}
                 } else if (freezeMode.equalsIgnoreCase("CAGE")) {
                     // Teleport to a high-altitude bedrock cage and blind
                     createCageFor(runner);
@@ -789,6 +792,11 @@ public class GameManager {
                 try { player.setFlying(false); } catch (Exception ignored) {}
             }
             player.setGameMode("SPECTATOR".equalsIgnoreCase(plugin.getConfigManager().getFreezeMode()) ? GameMode.SPECTATOR : GameMode.ADVENTURE);
+            // Ensure LIMBO also avoids anti-fly kicks on world change
+            if ("LIMBO".equalsIgnoreCase(plugin.getConfigManager().getFreezeMode())) {
+                try { player.setAllowFlight(true); } catch (Exception ignored) {}
+                try { player.setFlying(false); } catch (Exception ignored) {}
+            }
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.equals(player)) com.example.speedrunnerswap.utils.BukkitCompat.hidePlayer(plugin, viewer, player);
             }
