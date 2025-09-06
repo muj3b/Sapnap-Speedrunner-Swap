@@ -5,9 +5,7 @@ import com.example.speedrunnerswap.models.PlayerState;
 import com.example.speedrunnerswap.models.Team;
 import com.example.speedrunnerswap.utils.PlayerStateUtil;
 import com.example.speedrunnerswap.utils.SafeLocationFinder;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
+// Adventure imports not required directly; handled via ChatTitleCompat
 import org.bukkit.Location;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
